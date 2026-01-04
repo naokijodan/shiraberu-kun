@@ -304,8 +304,8 @@
    */
   function openEbaySearch(keyword) {
     // eBay Sold Listings検索URL（日本からの出品に絞る）
-    // LH_PrefLoc=2 = Located in, _salic=104 = Japan
-    const ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keyword)}&LH_Complete=1&LH_Sold=1&_sop=13&LH_PrefLoc=2&_salic=104`;
+    // _salic=104 = Japan, LH_LocatedIn=1 = フィルター有効化
+    const ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keyword)}&LH_Complete=1&LH_Sold=1&_sop=13&_salic=104&LH_LocatedIn=1`;
 
     // バックグラウンドで開く
     chrome.runtime.sendMessage({
