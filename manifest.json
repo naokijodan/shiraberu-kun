@@ -43,6 +43,12 @@
         "https://www.ebay.com/sh/research*"
       ],
       "js": ["terapeak-analyzer.js"]
+    },
+    {
+      "matches": [
+        "https://www.ebay.com/itm/*"
+      ],
+      "js": ["ebay-product.js"]
     }
   ]
 }

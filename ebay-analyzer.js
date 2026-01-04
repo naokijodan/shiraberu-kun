@@ -1,6 +1,7 @@
 /**
  * くらべる君 - eBay Sold Listings 分析スクリプト
  * eBayの販売済みページから価格データを収集・分析
+ * テキスト選択で再リサーチ機能付き
  */
 (function() {
   'use strict';
@@ -10,6 +11,7 @@
   // 累積データ
   let collectedPrices = [];
   let currentPanel = null;
+  let selectionPopup = null;
 
   /**
    * eBay Sold Listingsページかどうかを判定
@@ -314,6 +316,138 @@
   }
 
   /**
+   * テキスト選択時のポップアップを表示
+   */
+  function showSelectionPopup(selectedText, x, y) {
+    hideSelectionPopup();
+
+    const popup = document.createElement('div');
+    popup.id = 'kuraberu-selection-popup';
+    popup.innerHTML = `
+      <div style="
+        position: fixed;
+        left: ${x}px;
+        top: ${y}px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        padding: 8px;
+        z-index: 10001;
+        display: flex;
+        gap: 6px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      ">
+        <button class="kuraberu-sel-sold" style="
+          padding: 8px 12px;
+          background: linear-gradient(135deg, #0064d2 0%, #004a9e 100%);
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 12px;
+          cursor: pointer;
+          white-space: nowrap;
+        ">🔍 Sold</button>
+        <button class="kuraberu-sel-terapeak" style="
+          padding: 8px 12px;
+          background: linear-gradient(135deg, #f5af02 0%, #e09b00 100%);
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 12px;
+          cursor: pointer;
+          white-space: nowrap;
+        ">📊 テラピーク</button>
+      </div>
+    `;
+
+    document.body.appendChild(popup);
+    selectionPopup = popup;
+
+    // ボタンイベント
+    popup.querySelector('.kuraberu-sel-sold').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openSoldListingsSearch(selectedText);
+      hideSelectionPopup();
+    });
+
+    popup.querySelector('.kuraberu-sel-terapeak').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openTerapeakSearch(selectedText);
+      hideSelectionPopup();
+    });
+  }
+
+  /**
+   * 選択ポップアップを非表示
+   */
+  function hideSelectionPopup() {
+    if (selectionPopup) {
+      selectionPopup.remove();
+      selectionPopup = null;
+    }
+  }
+
+  /**
+   * Sold Listings検索を開く
+   */
+  function openSoldListingsSearch(keyword) {
+    const url = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keyword)}&LH_Complete=1&LH_Sold=1&_sop=13&LH_BIN=1`;
+    chrome.runtime.sendMessage({
+      action: 'openTab',
+      url: url,
+      active: true
+    });
+  }
+
+  /**
+   * テラピーク検索を開く
+   */
+  function openTerapeakSearch(keyword) {
+    const url = `https://www.ebay.com/sh/research?marketplace=EBAY-US&keywords=${encodeURIComponent(keyword)}&dayRange=90&tabName=SOLD`;
+    chrome.runtime.sendMessage({
+      action: 'openTab',
+      url: url,
+      active: true
+    });
+  }
+
+  /**
+   * テキスト選択を監視
+   */
+  function setupSelectionListener() {
+    document.addEventListener('mouseup', (e) => {
+      // 少し遅延して選択テキストを取得
+      setTimeout(() => {
+        const selection = window.getSelection();
+        const selectedText = selection.toString().trim();
+
+        // 3文字以上の選択があればポップアップ表示
+        if (selectedText.length >= 3) {
+          const range = selection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+
+          // 選択範囲の右上に表示
+          const x = Math.min(rect.right + 10, window.innerWidth - 250);
+          const y = rect.top + window.scrollY - 10;
+
+          showSelectionPopup(selectedText, x, y);
+        } else {
+          hideSelectionPopup();
+        }
+      }, 10);
+    });
+
+    // クリックでポップアップを閉じる
+    document.addEventListener('mousedown', (e) => {
+      if (selectionPopup && !selectionPopup.contains(e.target)) {
+        hideSelectionPopup();
+      }
+    });
+  }
+
+  /**
    * 初期化
    */
   function init() {
@@ -323,6 +457,9 @@
     }
 
     console.log('[くらべる君 eBay] Sold Listingsページを検出');
+
+    // テキスト選択リスナーを設定
+    setupSelectionListener();
 
     // 少し遅延してからパネルを表示（ページ読み込み完了を待つ）
     setTimeout(() => {
