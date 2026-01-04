@@ -26,25 +26,32 @@
   function extractPrices() {
     const prices = [];
 
-    // eBayの価格セレクタ（複数パターンに対応）
-    const priceSelectors = [
-      '.s-item__price',
-      '[data-testid="item-price"]',
-      '.srp-format-price-prezzo'
-    ];
+    // eBayのアイテムコンテナを取得
+    const items = document.querySelectorAll('.s-item');
 
-    for (const selector of priceSelectors) {
-      const elements = document.querySelectorAll(selector);
-      if (elements.length > 0) {
-        elements.forEach(el => {
-          const priceText = el.textContent.trim();
-          const price = parsePriceText(priceText);
-          if (price > 0) {
-            prices.push(price);
-          }
-        });
-        break; // 最初にマッチしたセレクタを使用
+    items.forEach(item => {
+      // 価格要素を探す
+      const priceEl = item.querySelector('.s-item__price');
+      if (priceEl) {
+        const priceText = priceEl.textContent.trim();
+        const price = parsePriceText(priceText);
+        // 妥当な価格範囲（$0.01〜$100,000）
+        if (price > 0 && price < 100000) {
+          prices.push(price);
+        }
       }
+    });
+
+    // フォールバック: 直接価格要素を探す
+    if (prices.length === 0) {
+      const priceElements = document.querySelectorAll('.s-item__price');
+      priceElements.forEach(el => {
+        const priceText = el.textContent.trim();
+        const price = parsePriceText(priceText);
+        if (price > 0 && price < 100000) {
+          prices.push(price);
+        }
+      });
     }
 
     console.log('[くらべる君 eBay] 抽出した価格:', prices.length, '件');
