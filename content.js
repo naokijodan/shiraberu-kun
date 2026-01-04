@@ -145,7 +145,7 @@
           <div class="kuraberu-hint">💡 ブランド名＋商品種類を英語で入力してください</div>
         </div>
         <div class="kuraberu-buttons">
-          <button class="kuraberu-translate-btn">🌐 翻訳してコピー</button>
+          <button class="kuraberu-ai-btn">🤖 AI翻訳</button>
           <button class="kuraberu-search-btn">🔍 eBayで検索</button>
         </div>
         <div class="kuraberu-message"></div>
@@ -164,9 +164,9 @@
     // 閉じるボタン
     panel.querySelector('.kuraberu-panel-close').addEventListener('click', closePanel);
 
-    // 翻訳ボタン
-    panel.querySelector('.kuraberu-translate-btn').addEventListener('click', () => {
-      translateAndCopy(originalTitle, panel);
+    // AI翻訳ボタン
+    panel.querySelector('.kuraberu-ai-btn').addEventListener('click', () => {
+      generateKeywordWithAI(originalTitle, panel);
     });
 
     // eBay検索ボタン
@@ -194,23 +194,54 @@
   }
 
   /**
-   * Google翻訳でタイトルを翻訳してコピー
+   * AIでeBay検索キーワードを生成
    */
-  function translateAndCopy(text, panel) {
+  async function generateKeywordWithAI(title, panel) {
     const messageEl = panel.querySelector('.kuraberu-message');
-    messageEl.innerHTML = '<span class="kuraberu-loading-text">🔄 翻訳中...</span>';
+    const inputEl = panel.querySelector('.kuraberu-keyword-input');
+    const aiBtn = panel.querySelector('.kuraberu-ai-btn');
 
-    // Google翻訳のURLを生成して新しいタブで開く
-    const translateUrl = `https://translate.google.com/?sl=ja&tl=en&text=${encodeURIComponent(text)}&op=translate`;
+    // ボタンを無効化
+    aiBtn.disabled = true;
+    aiBtn.textContent = '🔄 生成中...';
+    messageEl.innerHTML = '<span class="kuraberu-loading-text">🤖 AIがキーワードを生成しています...</span>';
+    messageEl.className = 'kuraberu-message';
 
-    // バックグラウンドで開く
-    chrome.runtime.sendMessage({
-      action: 'openTab',
-      url: translateUrl,
-      active: true  // 翻訳タブをアクティブにする
-    });
+    try {
+      // まずAPIキーがあるか確認
+      const checkResult = await chrome.runtime.sendMessage({ action: 'checkApiKey' });
 
-    showMessage(panel, '✅ Google翻訳を開きました。翻訳結果をコピーしてキーワード欄に貼り付けてください', 'success');
+      if (!checkResult.hasKey) {
+        showMessage(panel, '⚠️ OpenAI APIキーが設定されていません。拡張機能の設定画面でAPIキーを入力してください。', 'warning');
+        // 設定画面を開くリンクを追加
+        messageEl.innerHTML += '<br><a href="#" class="kuraberu-settings-link" style="color: #0064d2; text-decoration: underline; cursor: pointer;">設定を開く</a>';
+        messageEl.querySelector('.kuraberu-settings-link').addEventListener('click', (e) => {
+          e.preventDefault();
+          chrome.runtime.openOptionsPage();
+        });
+        return;
+      }
+
+      // バックグラウンドでキーワード生成
+      const result = await chrome.runtime.sendMessage({
+        action: 'generateKeyword',
+        title: title
+      });
+
+      if (result.success) {
+        inputEl.value = result.keyword;
+        showMessage(panel, '✅ キーワードを生成しました！「eBayで検索」をクリックしてください', 'success');
+      } else {
+        showMessage(panel, `❌ エラー: ${result.error}`, 'error');
+      }
+    } catch (error) {
+      console.error('[くらべる君] AI生成エラー:', error);
+      showMessage(panel, `❌ エラーが発生しました: ${error.message}`, 'error');
+    } finally {
+      // ボタンを復元
+      aiBtn.disabled = false;
+      aiBtn.textContent = '🤖 AI翻訳';
+    }
   }
 
   /**

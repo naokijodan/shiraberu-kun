@@ -5,7 +5,8 @@
   "description": "メルカリ商品のeBay市場価格を瞬時にリサーチ",
   "permissions": ["storage", "tabs"],
   "host_permissions": [
-    "https://www.ebay.com/*"
+    "https://www.ebay.com/*",
+    "https://api.openai.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -22,6 +23,7 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
+  "options_page": "options.html",
   "content_scripts": [
     {
       "matches": [

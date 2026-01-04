@@ -135,7 +135,7 @@
   margin-top: 16px;
 }
 
-.kuraberu-translate-btn,
+.kuraberu-ai-btn,
 .kuraberu-search-btn {
   flex: 1;
   padding: 10px 12px;
@@ -147,13 +147,20 @@
   transition: all 0.2s;
 }
 
-.kuraberu-translate-btn {
-  background: #f0f0f0;
-  color: #333;
+.kuraberu-ai-btn {
+  background: linear-gradient(135deg, #10a37f 0%, #0d8a6a 100%);
+  color: white;
 }
 
-.kuraberu-translate-btn:hover {
-  background: #e0e0e0;
+.kuraberu-ai-btn:hover {
+  background: linear-gradient(135deg, #12b88e 0%, #0f9d78 100%);
+  transform: translateY(-1px);
+}
+
+.kuraberu-ai-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .kuraberu-search-btn {
