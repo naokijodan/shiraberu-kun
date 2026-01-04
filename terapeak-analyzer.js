@@ -20,55 +20,39 @@
   }
 
   /**
-   * ページから価格データを抽出
+   * ページから価格データを抽出（Avg sold price列のみ）
    */
   function extractPrices() {
     const prices = [];
 
-    // テラピークのテーブル行を探す（各行が1つの販売記録）
+    // テラピークのテーブル行を探す
     const rows = document.querySelectorAll('table tbody tr');
 
     console.log('[くらべる君 テラピーク] テーブル行数:', rows.length);
 
     if (rows.length > 0) {
       rows.forEach((row, index) => {
-        // 各行から最初の$価格のみを取得（販売価格）
         const cells = row.querySelectorAll('td');
-        let foundPrice = false;
 
-        for (const cell of cells) {
-          if (foundPrice) break;
+        // 3列目（index 2）が「Avg sold price」列
+        // 列構成: 0=Listing, 1=Actions, 2=Avg sold price, 3=Avg shipping, ...
+        if (cells.length >= 3) {
+          const priceCell = cells[2];
+          const text = priceCell.textContent.trim();
 
-          const text = cell.textContent.trim();
-          // $で始まる価格を探す（最初の1つのみ）
-          if (text.startsWith('$') && text.match(/^\$[\d,]+\.\d{2}$/)) {
-            const price = parsePriceText(text);
+          // $で始まる価格を抽出（"Fixed price"や"Auction"などの文字列を除去）
+          const priceMatch = text.match(/\$([\d,]+\.\d{2})/);
+          if (priceMatch) {
+            const price = parsePriceText('$' + priceMatch[1]);
             if (price > 0 && price < 100000) {
               prices.push(price);
-              foundPrice = true;
-              console.log('[くらべる君 テラピーク] 行', index, '価格:', text);
+              console.log('[くらべる君 テラピーク] 行', index, 'Avg sold price:', '$' + priceMatch[1]);
             }
           }
         }
       });
     }
 
-    // テーブルで見つからない場合、リスト形式を探す
-    if (prices.length === 0) {
-      // テラピークのカード/リスト形式
-      const listItems = document.querySelectorAll('[class*="listing"], [class*="item"], [class*="card"]');
-      listItems.forEach(item => {
-        const priceMatch = item.textContent.match(/\$[\d,]+\.\d{2}/);
-        if (priceMatch) {
-          const price = parsePriceText(priceMatch[0]);
-          if (price > 0 && price < 100000) {
-            prices.push(price);
-          }
-        }
-      });
-    }
-
-    // 重複は除去しない（同じ価格で複数売れた可能性がある）
     console.log('[くらべる君 テラピーク] 抽出した価格:', prices.length, '件');
     return prices;
   }

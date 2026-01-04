@@ -300,12 +300,13 @@
   }
 
   /**
-   * eBay Sold Listings検索ページを開く（日本からの出品のみ）
+   * eBay Sold Listings検索ページを開く（日本からの出品のみ、Fixed Price/Best Offer）
    */
   function openEbaySearch(keyword) {
     // eBay Sold Listings検索URL（日本からの出品に絞る）
     // _salic=104 = Japan, LH_LocatedIn=1 = フィルター有効化
-    const ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keyword)}&LH_Complete=1&LH_Sold=1&_sop=13&_salic=104&LH_LocatedIn=1`;
+    // LH_BIN=1 = Buy It Now (Fixed Price + Best Offer), オークション除外
+    const ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keyword)}&LH_Complete=1&LH_Sold=1&_sop=13&_salic=104&LH_LocatedIn=1&LH_BIN=1`;
 
     // バックグラウンドで開く
     chrome.runtime.sendMessage({
@@ -314,16 +315,17 @@
       active: true
     });
 
-    console.log('[くらべる君] eBay検索を開きました（日本）:', keyword);
+    console.log('[くらべる君] eBay検索を開きました（日本・即決）:', keyword);
   }
 
   /**
-   * テラピーク検索ページを開く（日本からの出品のみ）
+   * テラピーク検索ページを開く（日本からの出品のみ、Fixed Price/Best Offer）
    */
   function openTerapeakSearch(keyword) {
     // テラピークProduct Research検索URL（日本に絞る）
     // sellerCountry=SellerLocation:::JP で日本の出品者に限定
-    const terapeakUrl = `https://www.ebay.com/sh/research?marketplace=EBAY-US&keywords=${encodeURIComponent(keyword)}&dayRange=90&endDate=&startDate=&categoryId=0&offset=0&limit=50&tabName=SOLD&sellerCountry=SellerLocation%3A%3A%3AJP&tz=Asia%2FTokyo`;
+    // format=Fixed%20price,Best%20offer%20accepted でオークション除外
+    const terapeakUrl = `https://www.ebay.com/sh/research?marketplace=EBAY-US&keywords=${encodeURIComponent(keyword)}&dayRange=90&endDate=&startDate=&categoryId=0&offset=0&limit=50&tabName=SOLD&sellerCountry=SellerLocation%3A%3A%3AJP&format=Fixed%20price%2CBest%20offer%20accepted&tz=Asia%2FTokyo`;
 
     // バックグラウンドで開く
     chrome.runtime.sendMessage({
@@ -332,7 +334,7 @@
       active: true
     });
 
-    console.log('[くらべる君] テラピーク検索を開きました（日本）:', keyword);
+    console.log('[くらべる君] テラピーク検索を開きました（日本・即決）:', keyword);
   }
 
   /**
