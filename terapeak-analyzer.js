@@ -21,57 +21,69 @@
 
   /**
    * ページから価格データを抽出
-   * 各行の最初の$価格を取得（Avg sold price）
-   * 重複行は除外
+   * span[data-item-id]を持つ行から価格を取得（ぶんせき君方式）
    */
   function extractPrices() {
     const prices = [];
-    const processedRows = new Set(); // 重複防止用
+    const seenItemIds = new Set(); // 重複防止用
 
-    // テーブル行を探す（tbody有無両方に対応）
-    let rows = document.querySelectorAll('table tbody tr');
-    console.log('[くらべる君 テラピーク] tbody tr:', rows.length);
+    // テラピークでは span[data-item-id] が各商品の識別子
+    const titleSpans = document.querySelectorAll('span[data-item-id]');
+    console.log('[くらべる君 テラピーク] data-item-id要素数:', titleSpans.length);
 
-    // tbodyがない場合は直接trを探す
-    if (rows.length === 0) {
-      rows = document.querySelectorAll('table tr');
-      console.log('[くらべる君 テラピーク] table tr:', rows.length);
-    }
-
-    if (rows.length > 0) {
-      rows.forEach((row, index) => {
-        // ヘッダー行をスキップ（thを含む行）
-        if (row.querySelector('th')) {
+    if (titleSpans.length > 0) {
+      titleSpans.forEach((titleSpan, index) => {
+        // data-item-idで重複チェック
+        const itemId = titleSpan.getAttribute('data-item-id');
+        if (seenItemIds.has(itemId)) {
           return;
         }
+        seenItemIds.add(itemId);
+
+        // 親の行を探す
+        const row = titleSpan.closest('tr') || titleSpan.closest('[class*="row"]');
+        if (!row) return;
+
+        // 行内から$価格を取得（最初に見つかった価格 = Avg sold price）
+        const priceMatch = row.textContent.match(/\$([\d,]+\.\d{2})/);
+        if (priceMatch) {
+          const priceValue = parseFloat(priceMatch[1].replace(/,/g, ''));
+
+          // 妥当な範囲の価格（$1以上）
+          if (priceValue >= 1 && priceValue < 100000) {
+            prices.push(priceValue);
+            console.log('[くらべる君 テラピーク] 商品', index, '価格:', '$' + priceMatch[1]);
+          }
+        }
+      });
+    }
+
+    // フォールバック：span[data-item-id]がない場合はテーブル行から抽出
+    if (prices.length === 0) {
+      console.log('[くらべる君 テラピーク] data-item-idがないためフォールバック');
+      const processedRows = new Set();
+
+      let rows = document.querySelectorAll('table tbody tr');
+      if (rows.length === 0) {
+        rows = document.querySelectorAll('table tr');
+      }
+
+      rows.forEach((row, index) => {
+        if (row.querySelector('th')) return;
 
         const cells = row.querySelectorAll('td');
         if (cells.length === 0) return;
 
-        // 重複チェック（行の最初のセルのテキストでユニーク判定）
         const firstCellText = cells[0]?.textContent?.trim().substring(0, 50) || '';
-        if (processedRows.has(firstCellText)) {
-          return;
-        }
+        if (processedRows.has(firstCellText)) return;
         processedRows.add(firstCellText);
 
-        // 各セルを順番にチェック（最初に見つかった$価格を取得）
-        let foundPrice = false;
-        for (let i = 0; i < cells.length && !foundPrice; i++) {
-          const cell = cells[i];
-          const text = cell.textContent.trim();
-
-          // $価格パターンを抽出（"$340.00\nFixed price"のような形式に対応）
-          const priceMatch = text.match(/\$([\d,]+\.\d{2})/);
-          if (priceMatch) {
-            const priceValue = parseFloat(priceMatch[1].replace(/,/g, ''));
-
-            // 妥当な範囲の価格（$1以上）
-            if (priceValue >= 1 && priceValue < 100000) {
-              prices.push(priceValue);
-              foundPrice = true;
-              console.log('[くらべる君 テラピーク] 行', index, '価格:', '$' + priceMatch[1]);
-            }
+        const priceMatch = row.textContent.match(/\$([\d,]+\.\d{2})/);
+        if (priceMatch) {
+          const priceValue = parseFloat(priceMatch[1].replace(/,/g, ''));
+          if (priceValue >= 1 && priceValue < 100000) {
+            prices.push(priceValue);
+            console.log('[くらべる君 テラピーク] 行', index, '価格:', '$' + priceMatch[1]);
           }
         }
       });
