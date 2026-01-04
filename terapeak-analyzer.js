@@ -20,60 +20,91 @@
   }
 
   /**
-   * ページから価格データを抽出（各行の最初の$価格 = Avg sold price）
+   * ページから価格データを抽出
+   * テラピークの列構造: Listing | Actions | Avg sold price | Avg shipping | Item sales | ...
+   * 「Avg sold price」列のみを取得（送料を除外）
    */
   function extractPrices() {
     const prices = [];
+    const processedRows = new Set(); // 重複防止用
 
-    // テラピークのテーブル行を探す
-    const rows = document.querySelectorAll('table tbody tr');
+    // メインのデータテーブルを探す（複数テーブルがある場合は最初のものを使用）
+    const tables = document.querySelectorAll('table');
+    console.log('[くらべる君 テラピーク] テーブル数:', tables.length);
 
-    console.log('[くらべる君 テラピーク] テーブル行数:', rows.length);
+    // 各テーブルをチェック
+    for (const table of tables) {
+      const rows = table.querySelectorAll('tbody tr');
+      console.log('[くらべる君 テラピーク] テーブル行数:', rows.length);
 
-    if (rows.length > 0) {
+      if (rows.length === 0) continue;
+
+      // ヘッダーから「Avg sold price」列のインデックスを特定
+      let priceColumnIndex = -1;
+      const headers = table.querySelectorAll('thead th, thead td');
+      headers.forEach((th, idx) => {
+        const text = th.textContent.trim().toLowerCase();
+        if (text.includes('avg sold price') || text.includes('sold price')) {
+          priceColumnIndex = idx;
+          console.log('[くらべる君 テラピーク] Avg sold price列発見: index', idx);
+        }
+      });
+
+      // ヘッダーがない場合、データ行から推測（3列目がAvg sold priceの場合が多い）
+      if (priceColumnIndex === -1) {
+        // 列構造を確認：最初の行で$価格が含まれる列を探す
+        const firstRow = rows[0];
+        if (firstRow) {
+          const cells = firstRow.querySelectorAll('td');
+          // 3列目（index 2）を優先的にチェック
+          if (cells.length >= 3) {
+            const cell2Text = cells[2]?.textContent || '';
+            if (cell2Text.includes('$')) {
+              priceColumnIndex = 2;
+              console.log('[くらべる君 テラピーク] 3列目を価格列として使用');
+            }
+          }
+        }
+      }
+
+      // 価格列が見つからない場合はスキップ
+      if (priceColumnIndex === -1) {
+        console.log('[くらべる君 テラピーク] 価格列が見つかりません、次のテーブルへ');
+        continue;
+      }
+
+      // 各行から価格を抽出
       rows.forEach((row, index) => {
+        // 重複チェック（行のテキスト内容でユニーク判定）
+        const rowText = row.textContent.trim().substring(0, 100);
+        if (processedRows.has(rowText)) {
+          return;
+        }
+        processedRows.add(rowText);
+
         const cells = row.querySelectorAll('td');
-        let foundPrice = false;
+        if (cells.length > priceColumnIndex) {
+          const priceCell = cells[priceColumnIndex];
+          const text = priceCell.textContent.trim();
 
-        // 各セルを順番にチェック（最初に見つかった$価格 = Avg sold price）
-        for (let i = 0; i < cells.length && !foundPrice; i++) {
-          const cell = cells[i];
-          const text = cell.textContent.trim();
-
-          // セル内から$価格パターンを抽出（"$340.00\nFixed price"のような形式に対応）
+          // $価格を抽出（"$340.00\nFixed price"のような形式に対応）
           const priceMatch = text.match(/\$([\d,]+\.\d{2})/);
-
           if (priceMatch) {
             const priceValue = parseFloat(priceMatch[1].replace(/,/g, ''));
 
-            // 送料は通常小さい値（$20以下が多い）なので、
-            // 最初の$価格を販売価格として取得
-            if (priceValue > 0 && priceValue < 100000) {
+            // 妥当な範囲の価格のみ（送料は通常$0-$50程度なので、$1以上を販売価格とみなす）
+            if (priceValue >= 1 && priceValue < 100000) {
               prices.push(priceValue);
-              foundPrice = true;
-              console.log('[くらべる君 テラピーク] 行', index, '価格:', '$' + priceMatch[1]);
+              console.log('[くらべる君 テラピーク] 行', index, 'Avg sold price:', '$' + priceMatch[1]);
             }
           }
         }
       });
-    }
 
-    // テーブルで見つからない場合のフォールバック
-    if (prices.length === 0) {
-      console.log('[くらべる君 テラピーク] テーブルから価格が見つかりません。フォールバック実行...');
-      const allCells = document.querySelectorAll('table td');
-      let count = 0;
-      allCells.forEach(cell => {
-        const text = cell.textContent.trim();
-        const priceMatch = text.match(/^\$([\d,]+\.\d{2})/);
-        if (priceMatch && count < 50) { // 最初の50個まで
-          const priceValue = parseFloat(priceMatch[1].replace(/,/g, ''));
-          if (priceValue > 0 && priceValue < 100000) {
-            prices.push(priceValue);
-            count++;
-          }
-        }
-      });
+      // 価格が見つかったら終了（最初の有効なテーブルのみ使用）
+      if (prices.length > 0) {
+        break;
+      }
     }
 
     console.log('[くらべる君 テラピーク] 抽出した価格:', prices.length, '件');
