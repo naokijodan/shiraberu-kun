@@ -20,7 +20,7 @@
   }
 
   /**
-   * ページから価格データを抽出（Avg sold price列のみ）
+   * ページから価格データを抽出（各行の最初の$価格 = Avg sold price）
    */
   function extractPrices() {
     const prices = [];
@@ -33,21 +33,44 @@
     if (rows.length > 0) {
       rows.forEach((row, index) => {
         const cells = row.querySelectorAll('td');
+        let foundPrice = false;
 
-        // 3列目（index 2）が「Avg sold price」列
-        // 列構成: 0=Listing, 1=Actions, 2=Avg sold price, 3=Avg shipping, ...
-        if (cells.length >= 3) {
-          const priceCell = cells[2];
-          const text = priceCell.textContent.trim();
+        // 各セルを順番にチェック（最初に見つかった$価格 = Avg sold price）
+        for (let i = 0; i < cells.length && !foundPrice; i++) {
+          const cell = cells[i];
+          const text = cell.textContent.trim();
 
-          // $で始まる価格を抽出（"Fixed price"や"Auction"などの文字列を除去）
+          // セル内から$価格パターンを抽出（"$340.00\nFixed price"のような形式に対応）
           const priceMatch = text.match(/\$([\d,]+\.\d{2})/);
+
           if (priceMatch) {
-            const price = parsePriceText('$' + priceMatch[1]);
-            if (price > 0 && price < 100000) {
-              prices.push(price);
-              console.log('[くらべる君 テラピーク] 行', index, 'Avg sold price:', '$' + priceMatch[1]);
+            const priceValue = parseFloat(priceMatch[1].replace(/,/g, ''));
+
+            // 送料は通常小さい値（$20以下が多い）なので、
+            // 最初の$価格を販売価格として取得
+            if (priceValue > 0 && priceValue < 100000) {
+              prices.push(priceValue);
+              foundPrice = true;
+              console.log('[くらべる君 テラピーク] 行', index, '価格:', '$' + priceMatch[1]);
             }
+          }
+        }
+      });
+    }
+
+    // テーブルで見つからない場合のフォールバック
+    if (prices.length === 0) {
+      console.log('[くらべる君 テラピーク] テーブルから価格が見つかりません。フォールバック実行...');
+      const allCells = document.querySelectorAll('table td');
+      let count = 0;
+      allCells.forEach(cell => {
+        const text = cell.textContent.trim();
+        const priceMatch = text.match(/^\$([\d,]+\.\d{2})/);
+        if (priceMatch && count < 50) { // 最初の50個まで
+          const priceValue = parseFloat(priceMatch[1].replace(/,/g, ''));
+          if (priceValue > 0 && priceValue < 100000) {
+            prices.push(priceValue);
+            count++;
           }
         }
       });
