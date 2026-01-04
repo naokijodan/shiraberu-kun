@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "くらべる君",
+  "version": "1.0.0",
+  "description": "メルカリ商品のeBay市場価格を瞬時にリサーチ",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://www.ebay.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "くらべる君",
+    "default_icon": {
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://jp.mercari.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ]
+}

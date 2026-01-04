@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>くらべる君</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 280px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #0064d2 0%, #004a9e 100%);
+      color: white;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .header p {
+      font-size: 11px;
+      opacity: 0.9;
+    }
+
+    .content {
+      padding: 16px;
+    }
+
+    .instruction {
+      background: #f5f9ff;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .instruction h2 {
+      font-size: 13px;
+      color: #0064d2;
+      margin-bottom: 8px;
+    }
+
+    .instruction ol {
+      font-size: 12px;
+      color: #444;
+      padding-left: 20px;
+    }
+
+    .instruction li {
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+
+    .tip {
+      background: #fff8e5;
+      border-left: 3px solid #ffc107;
+      padding: 10px 12px;
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .version {
+      text-align: center;
+      font-size: 10px;
+      color: #999;
+      padding-top: 8px;
+      border-top: 1px solid #eee;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🔍 くらべる君</h1>
+    <p>メルカリ商品のeBay市場調査</p>
+  </div>
+
+  <div class="content">
+    <div class="instruction">
+      <h2>使い方</h2>
+      <ol>
+        <li>メルカリで商品ページを開く</li>
+        <li>「🔍 eBay調査」ボタンをクリック</li>
+        <li>eBayでの販売状況が表示されます</li>
+      </ol>
+    </div>
+
+    <div class="tip">
+      💡 検索キーワードは自動生成されますが、必要に応じて編集して再検索できます。英語キーワードを使うとより正確な結果が得られます。
+    </div>
+
+    <div class="version">
+      Version 1.0.0
+    </div>
+  </div>
+</body>
+</html>
