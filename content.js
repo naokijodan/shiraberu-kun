@@ -322,8 +322,8 @@
    */
   function openTerapeakSearch(keyword) {
     // テラピークProduct Research検索URL（日本に絞る）
-    // sellerCountry=JP で日本の出品者に限定
-    const terapeakUrl = `https://www.ebay.com/sh/research?marketplace=EBAY-US&keywords=${encodeURIComponent(keyword)}&dayRange=90&endDate=&startDate=&categoryId=0&offset=0&limit=50&tabName=SOLD&tz=Asia%2FTokyo&sellerCountry=JP`;
+    // sellerCountry=SellerLocation:::JP で日本の出品者に限定
+    const terapeakUrl = `https://www.ebay.com/sh/research?marketplace=EBAY-US&keywords=${encodeURIComponent(keyword)}&dayRange=90&endDate=&startDate=&categoryId=0&offset=0&limit=50&tabName=SOLD&sellerCountry=SellerLocation%3A%3A%3AJP&tz=Asia%2FTokyo`;
 
     // バックグラウンドで開く
     chrome.runtime.sendMessage({
