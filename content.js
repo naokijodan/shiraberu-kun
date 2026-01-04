@@ -76,6 +76,46 @@
   }
 
   /**
+   * 商品説明を取得（とりこみ君のセレクタを参照）
+   */
+  function getProductDescription() {
+    // メルカリ専用のセレクタ
+    const descriptionSelectors = [
+      'div[data-testid="description"]',
+      'pre[data-testid="description"]',
+      'div.item-description',
+      'pre.item-description__inner',
+      'mer-text[class*="description"]',
+      'pre[class*="description"]'
+    ];
+
+    for (const selector of descriptionSelectors) {
+      const el = document.querySelector(selector);
+      if (el) {
+        const text = el.textContent?.trim() || '';
+        if (text && text.length > 10) {
+          console.log('[くらべる君] 説明取得成功:', selector, '->', text.substring(0, 50));
+          // 最大500文字に制限（トークン節約）
+          return text.substring(0, 500);
+        }
+      }
+    }
+
+    // フォールバック: preタグを探す
+    const allPre = document.querySelectorAll('pre');
+    for (const pre of allPre) {
+      const text = pre.textContent?.trim() || '';
+      if (text && text.length > 30) {
+        console.log('[くらべる君] 説明取得(fallback pre):', text.substring(0, 50));
+        return text.substring(0, 500);
+      }
+    }
+
+    console.log('[くらべる君] 説明取得失敗');
+    return '';
+  }
+
+  /**
    * eBay調査ボタンを追加
    */
   function addResearchButton() {
@@ -103,7 +143,8 @@
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      showResearchPanel(title, btn);
+      const description = getProductDescription();
+      showResearchPanel(title, description, btn);
     });
 
     // ボタンを右上にフローティング表示
@@ -119,8 +160,9 @@
   /**
    * 調査結果パネルを表示
    */
-  function showResearchPanel(originalTitle, buttonElement) {
+  function showResearchPanel(originalTitle, originalDescription, buttonElement) {
     console.log('[くらべる君] パネル表示 - 元タイトル:', originalTitle);
+    console.log('[くらべる君] パネル表示 - 元説明:', originalDescription?.substring(0, 100));
 
     // 既存のパネルを閉じる
     closePanel();
@@ -166,7 +208,7 @@
 
     // AI翻訳ボタン
     panel.querySelector('.kuraberu-ai-btn').addEventListener('click', () => {
-      generateKeywordWithAI(originalTitle, panel);
+      generateKeywordWithAI(originalTitle, originalDescription, panel);
     });
 
     // eBay検索ボタン
@@ -196,7 +238,7 @@
   /**
    * AIでeBay検索キーワードを生成
    */
-  async function generateKeywordWithAI(title, panel) {
+  async function generateKeywordWithAI(title, description, panel) {
     const messageEl = panel.querySelector('.kuraberu-message');
     const inputEl = panel.querySelector('.kuraberu-keyword-input');
     const aiBtn = panel.querySelector('.kuraberu-ai-btn');
@@ -223,10 +265,11 @@
         return;
       }
 
-      // バックグラウンドでキーワード生成
+      // バックグラウンドでキーワード生成（タイトル＋説明を送信）
       const result = await chrome.runtime.sendMessage({
         action: 'generateKeyword',
-        title: title
+        title: title,
+        description: description || ''
       });
 
       if (result.success) {
