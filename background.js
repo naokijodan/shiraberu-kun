@@ -8,21 +8,24 @@ const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_MODEL = 'gpt-4o-mini';
 
 // eBay検索キーワード生成用プロンプト
-const EBAY_KEYWORD_PROMPT = `あなたはeBay検索の専門家です。メルカリの商品情報から、eBayで最も効果的な英語検索キーワードを生成してください。
+const EBAY_KEYWORD_PROMPT = `あなたはeBay検索の専門家です。メルカリの商品情報から、eBayで効果的な英語検索キーワードを生成してください。
 
-【重要：キーワードは必ず2〜4語に絞ること】
+【キーワード数：3〜5語】
 
-【優先順位】
-1. ブランド名（必須）: エルメス→Hermes, シャネル→Chanel, ルイヴィトン→Louis Vuitton
-2. 商品カテゴリ（必須）: バッグ→bag, 財布→wallet, スカーフ→scarf, 時計→watch
-3. 型番/モデル名があれば追加（例: Birkin, Kelly, Neverfull）
-4. 色や素材は型番がない場合のみ追加
+【必須】
+1. ブランド名: エルメス→Hermes, シャネル→Chanel, ルイヴィトン→Louis Vuitton
+2. 商品カテゴリ: バッグ→bag, 財布→wallet, スカーフ→scarf, 時計→watch
+
+【記載があれば追加】
+3. 型番/モデル名（例: Birkin, Kelly, Neverfull, Speedy）
+4. 素材: シルク→silk, レザー→leather, キャンバス→canvas, カシミア→cashmere
+5. 色: 黒→black, 赤→red, ネイビー→navy, ベージュ→beige, ゴールド金具→gold hardware
 
 【除外】
-状態（美品等）、取引条件、サイズ詳細、説明文のノイズは全て無視
+状態（美品、未使用等）、取引条件（送料込み等）、サイズ（cm表記）、出品者コメント
 
 【出力】
-英語キーワードのみ。2〜4語。説明不要。
+英語キーワードのみ。3〜5語。説明不要。
 
 【入力】
 `;
