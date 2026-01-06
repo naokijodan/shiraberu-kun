@@ -355,13 +355,13 @@
   }
 
   /**
-   * テラピーク検索ページを開く（日本からの出品のみ）
+   * テラピーク検索ページを開く（日本からの出品のみ、Fixed Price + Best Offer）
    */
   function openTerapeakSearch(keyword) {
-    // テラピークProduct Research検索URL（日本に絞る）
+    // テラピークProduct Research検索URL
     // sellerCountry=SellerLocation:::JP で日本の出品者に限定
-    // 注: formatフィルターはUI上で手動設定が必要（URLパラメータが不安定）
-    const terapeakUrl = `https://www.ebay.com/sh/research?marketplace=EBAY-US&keywords=${encodeURIComponent(keyword)}&dayRange=90&tabName=SOLD&sellerCountry=SellerLocation%3A%3A%3AJP`;
+    // format=FIXED_PRICE&format=BEST_OFFER で即決・ベストオファーに絞る（オークション除外）
+    const terapeakUrl = `https://www.ebay.com/sh/research?marketplace=EBAY-US&keywords=${encodeURIComponent(keyword)}&dayRange=90&tabName=SOLD&sellerCountry=SellerLocation%3A%3A%3AJP&format=FIXED_PRICE&format=BEST_OFFER`;
 
     // バックグラウンドで開く
     chrome.runtime.sendMessage({
@@ -370,7 +370,7 @@
       active: true
     });
 
-    console.log('[しらべる君] テラピーク検索を開きました（日本）:', keyword);
+    console.log('[しらべる君] テラピーク検索を開きました（日本・即決/BO）:', keyword);
   }
 
   /**
