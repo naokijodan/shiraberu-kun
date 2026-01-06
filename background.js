@@ -1,5 +1,5 @@
 /**
- * くらべる君 - Background Service Worker
+ * しらべる君 - Background Service Worker
  * OpenAI API呼び出し、タブ操作をバックグラウンドで実行
  */
 
@@ -40,7 +40,7 @@ const MERCARI_KEYWORD_PROMPT = `英語の商品タイトルを日本語のメル
 
 // メッセージリスナー
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('[くらべる君 BG] メッセージ受信:', request.action);
+  console.log('[しらべる君 BG] メッセージ受信:', request.action);
 
   if (request.action === 'generateKeyword') {
     // OpenAI APIでキーワード生成（タイトル＋説明）
@@ -64,7 +64,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       url: request.url,
       active: request.active !== false
     }, (tab) => {
-      console.log('[くらべる君 BG] タブを開きました:', request.url);
+      console.log('[しらべる君 BG] タブを開きました:', request.url);
       sendResponse({ success: true, tabId: tab.id });
     });
     return true;
@@ -109,9 +109,9 @@ async function generateEbayKeyword(title, description = '') {
     throw new Error('OpenAI APIキーが設定されていません。拡張機能の設定画面でAPIキーを入力してください。');
   }
 
-  console.log('[くらべる君 BG] OpenAI API呼び出し開始');
-  console.log('[くらべる君 BG] タイトル:', title);
-  console.log('[くらべる君 BG] 説明:', description?.substring(0, 100));
+  console.log('[しらべる君 BG] OpenAI API呼び出し開始');
+  console.log('[しらべる君 BG] タイトル:', title);
+  console.log('[しらべる君 BG] 説明:', description?.substring(0, 100));
 
   // タイトルと説明を組み合わせた入力を作成
   let inputText = `タイトル: ${title}`;
@@ -140,7 +140,7 @@ async function generateEbayKeyword(title, description = '') {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    console.error('[くらべる君 BG] OpenAI APIエラー:', error);
+    console.error('[しらべる君 BG] OpenAI APIエラー:', error);
 
     if (response.status === 401) {
       throw new Error('APIキーが無効です。正しいOpenAI APIキーを設定してください。');
@@ -151,7 +151,7 @@ async function generateEbayKeyword(title, description = '') {
   const data = await response.json();
   const keyword = data.choices[0].message.content.trim();
 
-  console.log('[くらべる君 BG] キーワード生成成功:', keyword);
+  console.log('[しらべる君 BG] キーワード生成成功:', keyword);
   return keyword;
 }
 
@@ -167,8 +167,8 @@ async function generateMercariKeyword(title) {
     throw new Error('OpenAI APIキーが設定されていません。拡張機能の設定画面でAPIキーを入力してください。');
   }
 
-  console.log('[くらべる君 BG] メルカリキーワード生成開始');
-  console.log('[くらべる君 BG] 英語タイトル:', title);
+  console.log('[しらべる君 BG] メルカリキーワード生成開始');
+  console.log('[しらべる君 BG] 英語タイトル:', title);
 
   const response = await fetch(OPENAI_API_URL, {
     method: 'POST',
@@ -191,7 +191,7 @@ async function generateMercariKeyword(title) {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    console.error('[くらべる君 BG] OpenAI APIエラー:', error);
+    console.error('[しらべる君 BG] OpenAI APIエラー:', error);
 
     if (response.status === 401) {
       throw new Error('APIキーが無効です。正しいOpenAI APIキーを設定してください。');
@@ -202,8 +202,8 @@ async function generateMercariKeyword(title) {
   const data = await response.json();
   const keyword = data.choices[0].message.content.trim();
 
-  console.log('[くらべる君 BG] メルカリキーワード生成成功:', keyword);
+  console.log('[しらべる君 BG] メルカリキーワード生成成功:', keyword);
   return keyword;
 }
 
-console.log('[くらべる君 BG] Background Service Worker 起動');
+console.log('[しらべる君 BG] Background Service Worker 起動');

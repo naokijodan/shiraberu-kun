@@ -1,12 +1,12 @@
 /**
- * くらべる君 - eBay Sold Listings 分析スクリプト
+ * しらべる君 - eBay Sold Listings 分析スクリプト
  * eBayの販売済みページから価格データを収集・分析
  * テキスト選択で再リサーチ機能付き
  */
 (function() {
   'use strict';
 
-  console.log('[くらべる君 eBay] 分析スクリプト読み込み');
+  console.log('[しらべる君 eBay] 分析スクリプト読み込み');
 
   // 累積データ（chrome.storageで永続化）
   let collectedPrices = [];
@@ -47,7 +47,7 @@
 
       if (priceEl) {
         const priceText = priceEl.textContent.trim();
-        console.log('[くらべる君 eBay] 価格テキスト:', priceText);
+        console.log('[しらべる君 eBay] 価格テキスト:', priceText);
         const price = parsePriceText(priceText);
         // 妥当な価格範囲（$0.01〜$100,000）
         if (price > 0 && price < 100000) {
@@ -85,7 +85,7 @@
       }
     }
 
-    console.log('[くらべる君 eBay] 抽出した価格:', prices.length, '件');
+    console.log('[しらべる君 eBay] 抽出した価格:', prices.length, '件');
     return prices;
   }
 
@@ -178,7 +178,7 @@
           justify-content: space-between;
           align-items: center;
         ">
-          <span style="font-weight: 600;">📊 くらべる君 - 価格分析</span>
+          <span style="font-weight: 600;">📊 しらべる君 - 価格分析</span>
           <button id="kuraberu-close" style="
             background: rgba(255,255,255,0.2);
             border: none;
@@ -254,7 +254,7 @@
       if (savedPrices.length > 0) {
         collectedPrices = savedPrices;
         currentSearchKeyword = getSearchKeyword();
-        console.log('[くらべる君 eBay] 累積データ読み込み:', savedPrices.length, '件');
+        console.log('[しらべる君 eBay] 累積データ読み込み:', savedPrices.length, '件');
         // 累積データがある場合は追加モードで分析
         analyzePage(true);
       } else {
@@ -316,7 +316,7 @@
    */
   function analyzePage(accumulate = false) {
     const newPrices = extractPrices();
-    console.log('[くらべる君 eBay] 新規価格:', newPrices.length, '件');
+    console.log('[しらべる君 eBay] 新規価格:', newPrices.length, '件');
 
     if (accumulate) {
       // 累積モード：既存データに追加
@@ -641,7 +641,7 @@
       showAnalysisPanel();
     });
 
-    console.log('[くらべる君 eBay] ボタン追加完了');
+    console.log('[しらべる君 eBay] ボタン追加完了');
   }
 
   /**
@@ -692,11 +692,11 @@
    */
   function init() {
     if (!isSoldListingsPage()) {
-      console.log('[くらべる君 eBay] Sold Listingsページではありません');
+      console.log('[しらべる君 eBay] Sold Listingsページではありません');
       return;
     }
 
-    console.log('[くらべる君 eBay] Sold Listingsページを検出');
+    console.log('[しらべる君 eBay] Sold Listingsページを検出');
 
     // テキスト選択リスナーを設定
     setupSelectionListener();

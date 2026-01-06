@@ -1,12 +1,12 @@
 /**
- * くらべる君 - Content Script
+ * しらべる君 - Content Script
  * メルカリ商品ページにeBay調査ボタンを追加
  */
 (function() {
   'use strict';
 
-  console.log('[くらべる君] Content Script 読み込み開始');
-  console.log('[くらべる君] 現在のURL:', window.location.href);
+  console.log('[しらべる君] Content Script 読み込み開始');
+  console.log('[しらべる君] 現在のURL:', window.location.href);
 
   // 表示中のパネル
   let currentPanel = null;
@@ -36,7 +36,7 @@
     ];
 
     // 除外キーワード（他の拡張機能が挿入する要素）
-    const excludeKeywords = ['ぷろん君', 'みちゃった君', 'くらべる君', 'とりこみ君'];
+    const excludeKeywords = ['ぷろん君', 'みちゃった君', 'しらべる君', 'とりこみ君'];
 
     for (const selector of titleSelectors) {
       const elements = document.querySelectorAll(selector);
@@ -49,7 +49,7 @@
         );
 
         if (text && text.length > 5 && !shouldExclude) {
-          console.log('[くらべる君] タイトル取得成功:', selector, '->', text.substring(0, 50));
+          console.log('[しらべる君] タイトル取得成功:', selector, '->', text.substring(0, 50));
           return text;
         }
       }
@@ -65,13 +65,13 @@
           text.toLowerCase().includes(kw.toLowerCase())
         );
         if (text && text.length > 5 && !shouldExclude) {
-          console.log('[くらべる君] タイトル取得(main h1):', text.substring(0, 50));
+          console.log('[しらべる君] タイトル取得(main h1):', text.substring(0, 50));
           return text;
         }
       }
     }
 
-    console.log('[くらべる君] タイトル取得失敗');
+    console.log('[しらべる君] タイトル取得失敗');
     return '';
   }
 
@@ -94,7 +94,7 @@
       if (el) {
         const text = el.textContent?.trim() || '';
         if (text && text.length > 10) {
-          console.log('[くらべる君] 説明取得成功:', selector, '->', text.substring(0, 50));
+          console.log('[しらべる君] 説明取得成功:', selector, '->', text.substring(0, 50));
           // 最大500文字に制限（トークン節約）
           return text.substring(0, 500);
         }
@@ -106,12 +106,12 @@
     for (const pre of allPre) {
       const text = pre.textContent?.trim() || '';
       if (text && text.length > 30) {
-        console.log('[くらべる君] 説明取得(fallback pre):', text.substring(0, 50));
+        console.log('[しらべる君] 説明取得(fallback pre):', text.substring(0, 50));
         return text.substring(0, 500);
       }
     }
 
-    console.log('[くらべる君] 説明取得失敗');
+    console.log('[しらべる君] 説明取得失敗');
     return '';
   }
 
@@ -119,7 +119,7 @@
    * eBay調査ボタンを追加
    */
   function addResearchButton() {
-    console.log('[くらべる君] ボタン追加処理開始');
+    console.log('[しらべる君] ボタン追加処理開始');
 
     // 既にボタンがあれば何もしない
     if (document.querySelector('.kuraberu-btn')) {
@@ -129,7 +129,7 @@
     // 商品タイトルを取得
     const title = getProductTitle();
     if (!title) {
-      console.log('[くらべる君] タイトルが見つかりません。2秒後に再試行...');
+      console.log('[しらべる君] タイトルが見つかりません。2秒後に再試行...');
       setTimeout(addResearchButton, 2000);
       return;
     }
@@ -161,15 +161,15 @@
       showResearchPanel(title, description, btn);
     });
 
-    console.log('[くらべる君] ボタン追加完了（ドラッグ対応）');
+    console.log('[しらべる君] ボタン追加完了（ドラッグ対応）');
   }
 
   /**
    * 調査結果パネルを表示
    */
   function showResearchPanel(originalTitle, originalDescription, buttonElement) {
-    console.log('[くらべる君] パネル表示 - 元タイトル:', originalTitle);
-    console.log('[くらべる君] パネル表示 - 元説明:', originalDescription?.substring(0, 100));
+    console.log('[しらべる君] パネル表示 - 元タイトル:', originalTitle);
+    console.log('[しらべる君] パネル表示 - 元説明:', originalDescription?.substring(0, 100));
 
     // 既存のパネルを閉じる
     closePanel();
@@ -297,7 +297,7 @@
         showMessage(panel, `❌ エラー: ${result.error}`, 'error');
       }
     } catch (error) {
-      console.error('[くらべる君] AI生成エラー:', error);
+      console.error('[しらべる君] AI生成エラー:', error);
       showMessage(panel, `❌ エラーが発生しました: ${error.message}`, 'error');
     } finally {
       // ボタンを復元
@@ -322,7 +322,7 @@
       active: true
     });
 
-    console.log('[くらべる君] eBay検索を開きました（日本・即決）:', keyword);
+    console.log('[しらべる君] eBay検索を開きました（日本・即決）:', keyword);
   }
 
   /**
@@ -341,7 +341,7 @@
       active: true
     });
 
-    console.log('[くらべる君] テラピーク検索を開きました（日本）:', keyword);
+    console.log('[しらべる君] テラピーク検索を開きました（日本）:', keyword);
   }
 
   /**
@@ -445,10 +445,10 @@
    * 初期化
    */
   function init() {
-    console.log('[くらべる君] 初期化開始');
+    console.log('[しらべる君] 初期化開始');
 
     if (!isProductPage()) {
-      console.log('[くらべる君] 商品ページではないためスキップ');
+      console.log('[しらべる君] 商品ページではないためスキップ');
       return;
     }
 
@@ -480,7 +480,7 @@
   setInterval(() => {
     if (window.location.href !== lastUrl) {
       lastUrl = window.location.href;
-      console.log('[くらべる君] URL変更検知:', lastUrl);
+      console.log('[しらべる君] URL変更検知:', lastUrl);
       if (isProductPage() && !document.querySelector('.kuraberu-btn')) {
         setTimeout(addResearchButton, 1500);
       }

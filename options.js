@@ -1,5 +1,5 @@
 /**
- * くらべる君 - Options Page Script
+ * しらべる君 - Options Page Script
  */
 
 document.addEventListener('DOMContentLoaded', async () => {

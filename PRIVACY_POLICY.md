@@ -1,6 +1,6 @@
 # プライバシーポリシー / Privacy Policy
 
-**くらべる君 - eBay価格リサーチ**
+**しらべる君 - eBay価格リサーチ**
 
 最終更新日: 2025年1月6日
 
@@ -10,7 +10,7 @@
 
 ### 1. はじめに
 
-「くらべる君」（以下、「本拡張機能」）は、ユーザーのプライバシーを尊重し、個人情報の保護に努めています。本プライバシーポリシーは、本拡張機能がどのような情報を収集し、どのように使用するかを説明します。
+「しらべる君」（以下、「本拡張機能」）は、ユーザーのプライバシーを尊重し、個人情報の保護に努めています。本プライバシーポリシーは、本拡張機能がどのような情報を収集し、どのように使用するかを説明します。
 
 ### 2. 収集する情報
 
@@ -72,7 +72,7 @@
 
 ### 1. Introduction
 
-"Kuraberu-kun" (hereinafter referred to as "this extension") respects user privacy and is committed to protecting personal information. This Privacy Policy explains what information this extension collects and how it is used.
+"Shiraberu-kun" (hereinafter referred to as "this extension") respects user privacy and is committed to protecting personal information. This Privacy Policy explains what information this extension collects and how it is used.
 
 ### 2. Information We Collect
 
@@ -130,4 +130,4 @@ If you have any questions or concerns about privacy, please contact us through t
 
 ---
 
-© 2025 くらべる君
+© 2025 しらべる君

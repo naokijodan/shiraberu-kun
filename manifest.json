@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "くらべる君 - eBay価格リサーチ",
+  "name": "しらべる君 - eBay価格リサーチ",
   "version": "1.0.0",
   "description": "メルカリ商品のeBay市場価格を瞬時にリサーチ。Sold Listings分析、テラピーク連携、AI翻訳機能搭載。",
   "default_locale": "ja",
@@ -15,7 +15,7 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "くらべる君",
+    "default_title": "しらべる君",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

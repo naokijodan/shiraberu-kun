@@ -1,10 +1,10 @@
 # Chrome Web Store 掲載情報 / Store Listing
 
 ## 拡張機能名
-くらべる君 - eBay価格リサーチ
+しらべる君 - eBay価格リサーチ
 
 ## Extension Name
-Kuraberu-kun - eBay Price Research
+Shiraberu-kun - eBay Price Research
 
 ---
 
@@ -21,7 +21,7 @@ Instantly research eBay market prices for Mercari products. Sold Listings analys
 ## 詳細な説明
 
 ### 概要
-「くらべる君」は、メルカリで見つけた商品のeBay市場価格を瞬時にリサーチできるChrome拡張機能です。輸出転売ビジネスにおける仕入れ判断をサポートし、効率的な価格調査を実現します。
+「しらべる君」は、メルカリで見つけた商品のeBay市場価格を瞬時にリサーチできるChrome拡張機能です。輸出転売ビジネスにおける仕入れ判断をサポートし、効率的な価格調査を実現します。
 
 ### 主な機能
 
@@ -65,7 +65,7 @@ Instantly research eBay market prices for Mercari products. Sold Listings analys
 ## Detailed Description (English)
 
 ### Overview
-"Kuraberu-kun" is a Chrome extension that instantly researches eBay market prices for products found on Mercari. It supports purchasing decisions in export resale business and enables efficient price research.
+"Shiraberu-kun" is a Chrome extension that instantly researches eBay market prices for products found on Mercari. It supports purchasing decisions in export resale business and enables efficient price research.
 
 ### Key Features
 
@@ -142,4 +142,4 @@ eBay Sold Listingsページでの価格統計表示。平均価格、中央値�
 
 ---
 
-© 2025 くらべる君
+© 2025 しらべる君

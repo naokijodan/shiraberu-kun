@@ -1,11 +1,11 @@
 /**
- * くらべる君 - eBay商品ページ用スクリプト
+ * しらべる君 - eBay商品ページ用スクリプト
  * eBay商品詳細ページにリサーチボタンを追加
  */
 (function() {
   'use strict';
 
-  console.log('[くらべる君 eBay商品] スクリプト読み込み');
+  console.log('[しらべる君 eBay商品] スクリプト読み込み');
 
   let currentPanel = null;
 
@@ -37,13 +37,13 @@
         // "Details about" などのプレフィックスを除去
         const cleaned = text.replace(/^Details about\s*/i, '').trim();
         if (cleaned && cleaned.length > 5) {
-          console.log('[くらべる君 eBay商品] タイトル取得:', cleaned.substring(0, 50));
+          console.log('[しらべる君 eBay商品] タイトル取得:', cleaned.substring(0, 50));
           return cleaned;
         }
       }
     }
 
-    console.log('[くらべる君 eBay商品] タイトル取得失敗');
+    console.log('[しらべる君 eBay商品] タイトル取得失敗');
     return '';
   }
 
@@ -57,7 +57,7 @@
 
     const title = getProductTitle();
     if (!title) {
-      console.log('[くらべる君 eBay商品] タイトルが見つかりません。2秒後に再試行...');
+      console.log('[しらべる君 eBay商品] タイトルが見つかりません。2秒後に再試行...');
       setTimeout(addResearchButton, 2000);
       return;
     }
@@ -97,7 +97,7 @@
       showResearchPanel(title, btn);
     });
 
-    console.log('[くらべる君 eBay商品] ボタン追加完了（ドラッグ対応）');
+    console.log('[しらべる君 eBay商品] ボタン追加完了（ドラッグ対応）');
   }
 
   /**
@@ -332,7 +332,7 @@
         showMessage(panel, `❌ エラー: ${result.error}`, 'error');
       }
     } catch (error) {
-      console.error('[くらべる君 eBay商品] AI翻訳エラー:', error);
+      console.error('[しらべる君 eBay商品] AI翻訳エラー:', error);
       showMessage(panel, `❌ エラー: ${error.message}`, 'error');
     } finally {
       aiBtn.disabled = false;
@@ -501,11 +501,11 @@
    */
   function init() {
     if (!isProductPage()) {
-      console.log('[くらべる君 eBay商品] 商品ページではありません');
+      console.log('[しらべる君 eBay商品] 商品ページではありません');
       return;
     }
 
-    console.log('[くらべる君 eBay商品] 商品ページを検出');
+    console.log('[しらべる君 eBay商品] 商品ページを検出');
     setTimeout(addResearchButton, 1500);
   }
 

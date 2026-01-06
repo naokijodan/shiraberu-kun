@@ -1,11 +1,11 @@
 /**
- * くらべる君 - テラピーク分析スクリプト
+ * しらべる君 - テラピーク分析スクリプト
  * テラピークのページから価格データを収集・分析
  */
 (function() {
   'use strict';
 
-  console.log('[くらべる君 テラピーク] 分析スクリプト読み込み');
+  console.log('[しらべる君 テラピーク] 分析スクリプト読み込み');
 
   // 累積データ（chrome.storageで永続化）
   let collectedPrices = [];
@@ -31,7 +31,7 @@
 
     // テラピークでは span[data-item-id] が各商品の識別子
     const titleSpans = document.querySelectorAll('span[data-item-id]');
-    console.log('[くらべる君 テラピーク] data-item-id要素数:', titleSpans.length);
+    console.log('[しらべる君 テラピーク] data-item-id要素数:', titleSpans.length);
 
     if (titleSpans.length > 0) {
       titleSpans.forEach((titleSpan, index) => {
@@ -54,7 +54,7 @@
           // 妥当な範囲の価格（$1以上）
           if (priceValue >= 1 && priceValue < 100000) {
             prices.push(priceValue);
-            console.log('[くらべる君 テラピーク] 商品', index, '価格:', '$' + priceMatch[1]);
+            console.log('[しらべる君 テラピーク] 商品', index, '価格:', '$' + priceMatch[1]);
           }
         }
       });
@@ -62,7 +62,7 @@
 
     // フォールバック：span[data-item-id]がない場合はテーブル行から抽出
     if (prices.length === 0) {
-      console.log('[くらべる君 テラピーク] data-item-idがないためフォールバック');
+      console.log('[しらべる君 テラピーク] data-item-idがないためフォールバック');
       const processedRows = new Set();
 
       let rows = document.querySelectorAll('table tbody tr');
@@ -85,13 +85,13 @@
           const priceValue = parseFloat(priceMatch[1].replace(/,/g, ''));
           if (priceValue >= 1 && priceValue < 100000) {
             prices.push(priceValue);
-            console.log('[くらべる君 テラピーク] 行', index, '価格:', '$' + priceMatch[1]);
+            console.log('[しらべる君 テラピーク] 行', index, '価格:', '$' + priceMatch[1]);
           }
         }
       });
     }
 
-    console.log('[くらべる君 テラピーク] 抽出した価格:', prices.length, '件');
+    console.log('[しらべる君 テラピーク] 抽出した価格:', prices.length, '件');
     return prices;
   }
 
@@ -161,7 +161,7 @@
           justify-content: space-between;
           align-items: center;
         ">
-          <span style="font-weight: 600;">📊 くらべる君 - テラピーク分析</span>
+          <span style="font-weight: 600;">📊 しらべる君 - テラピーク分析</span>
           <button id="kuraberu-tp-close" style="
             background: rgba(255,255,255,0.2);
             border: none;
@@ -240,7 +240,7 @@
       if (savedPrices.length > 0) {
         collectedPrices = savedPrices;
         currentSearchKeyword = getSearchKeyword();
-        console.log('[くらべる君 テラピーク] 累積データ読み込み:', savedPrices.length, '件');
+        console.log('[しらべる君 テラピーク] 累積データ読み込み:', savedPrices.length, '件');
         analyzePage(true);
       } else {
         analyzePage();
@@ -299,7 +299,7 @@
    */
   function analyzePage(accumulate = false) {
     const newPrices = extractPrices();
-    console.log('[くらべる君 テラピーク] 新規価格:', newPrices.length, '件');
+    console.log('[しらべる君 テラピーク] 新規価格:', newPrices.length, '件');
 
     if (accumulate) {
       // 累積モード：既存データに追加
@@ -438,15 +438,15 @@
       const table = document.querySelector('table tr') ||
                     document.querySelector('span[data-item-id]') ||
                     document.querySelector('[class*="research"]');
-      console.log('[くらべる君 テラピーク] コンテンツ確認中... 試行', attempts);
+      console.log('[しらべる君 テラピーク] コンテンツ確認中... 試行', attempts);
 
       if (table) {
-        console.log('[くらべる君 テラピーク] コンテンツ発見');
+        console.log('[しらべる君 テラピーク] コンテンツ発見');
         callback();
       } else if (attempts < maxAttempts) {
         setTimeout(check, 500);
       } else {
-        console.log('[くらべる君 テラピーク] コンテンツが見つかりませんでしたが、ボタンは表示します');
+        console.log('[しらべる君 テラピーク] コンテンツが見つかりませんでしたが、ボタンは表示します');
         callback(); // ボタンは表示する
       }
     };
@@ -499,7 +499,7 @@
       showAnalysisPanel();
     });
 
-    console.log('[くらべる君 テラピーク] ボタン追加完了');
+    console.log('[しらべる君 テラピーク] ボタン追加完了');
   }
 
   /**
@@ -550,11 +550,11 @@
    */
   function init() {
     if (!isTerapeakPage()) {
-      console.log('[くらべる君 テラピーク] テラピークページではありません');
+      console.log('[しらべる君 テラピーク] テラピークページではありません');
       return;
     }
 
-    console.log('[くらべる君 テラピーク] テラピークページを検出');
+    console.log('[しらべる君 テラピーク] テラピークページを検出');
 
     // コンテンツが読み込まれるまで待ってからボタン表示
     waitForContent(() => {
