@@ -27,7 +27,13 @@ const PRICE_CALC_DEFAULTS = {
   packageLength: 20,
   packageWidth: 20,
   packageHeight: 20,
-  shippingMethod: '自動選択'
+  shippingMethod: '自動選択',
+  // 送料サーチャージ・割引設定
+  fedexFuelSurcharge: 29.75,    // FedEx燃油サーチャージ（%）
+  dhlFuelSurcharge: 30,         // DHL燃油サーチャージ（%）
+  cpassDiscount: 3,             // Cpass割引（%）
+  fedexExtraPer500g: 115,       // FedEx 500gごとの追加料金（円）
+  dhlExtraPer500g: 96           // DHL 500gごとの追加料金（円）
 };
 
 // 送料テーブル
@@ -113,14 +119,6 @@ const SHIPPING_RATE_TABLE = {
   ]
 };
 
-// 送料計算用の設定
-const SHIPPING_CONFIG = {
-  fedexFuel: 0.185,
-  dhlFuel: 0.185,
-  cpassDiscount: 0.4,
-  fedexExtraPer500g: 490,
-  dhlExtraPer500g: 96
-};
 
 /**
  * 価格計算クラス
@@ -481,6 +479,7 @@ class PriceCalculator {
   }
 
   _getCpassFedexRate(weight) {
+    const s = this.settings;
     const rounded = Math.ceil(weight / 500) * 500;
     let base = null;
 
@@ -493,15 +492,19 @@ class PriceCalculator {
 
     if (!base) return 999999;
 
+    // 500gごとの追加料金
     const overUnits = Math.max(0, (rounded - 500) / 500);
-    const extra = overUnits * SHIPPING_CONFIG.fedexExtraPer500g;
+    const extra = overUnits * s.fedexExtraPer500g;
     const subTotal = base + extra;
-    const fuel = subTotal * SHIPPING_CONFIG.fedexFuel;
-    const discount = -(subTotal + fuel) * SHIPPING_CONFIG.cpassDiscount;
+    // 燃油サーチャージ
+    const fuel = subTotal * (s.fedexFuelSurcharge / 100);
+    // Cpass割引
+    const discount = -(subTotal + fuel) * (s.cpassDiscount / 100);
     return Math.round(subTotal + fuel + discount);
   }
 
   _getCpassDHLRate(weight) {
+    const s = this.settings;
     const rounded = Math.ceil(weight / 500) * 500;
     let base = null;
 
@@ -514,11 +517,14 @@ class PriceCalculator {
 
     if (!base) return 999999;
 
+    // 500gごとの追加料金
     const overUnits = Math.max(0, (rounded - 500) / 500);
-    const extra = overUnits * SHIPPING_CONFIG.dhlExtraPer500g;
+    const extra = overUnits * s.dhlExtraPer500g;
     const subTotal = base + extra;
-    const fuel = subTotal * SHIPPING_CONFIG.dhlFuel;
-    const discount = -(subTotal + fuel) * SHIPPING_CONFIG.cpassDiscount;
+    // 燃油サーチャージ
+    const fuel = subTotal * (s.dhlFuelSurcharge / 100);
+    // Cpass割引
+    const discount = -(subTotal + fuel) * (s.cpassDiscount / 100);
     return Math.round(subTotal + fuel + discount);
   }
 

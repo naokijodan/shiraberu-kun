@@ -30,7 +30,13 @@ const DEFAULT_SETTINGS = {
   packageLength: 20,
   packageWidth: 20,
   packageHeight: 20,
-  shippingMethod: '自動選択'
+  shippingMethod: '自動選択',
+  // サーチャージ・割引設定
+  fedexFuelSurcharge: 29.75,
+  dhlFuelSurcharge: 30,
+  cpassDiscount: 3,
+  fedexExtraPer500g: 115,
+  dhlExtraPer500g: 96
 };
 
 // 送料テーブル
@@ -116,14 +122,6 @@ const SHIPPING_RATE_TABLE = {
   ]
 };
 
-// 送料計算用の設定
-const SHIPPING_CONFIG = {
-  fedexFuel: 0.185,
-  dhlFuel: 0.185,
-  cpassDiscount: 0.4,
-  fedexExtraPer500g: 490,
-  dhlExtraPer500g: 96
-};
 
 document.addEventListener('DOMContentLoaded', async () => {
   // 保存済みの設定を読み込み
@@ -163,7 +161,8 @@ function applySettingsToForm(settings) {
     'exchangeRate', 'targetProfitRate', 'feeRate', 'adRate', 'payoneerRate', 'safetyMargin',
     'tariffRate', 'vatRate', 'processingFeeRate', 'mpf', 'ceMpf', 'mpfUsd', 'euShippingDiff',
     'shippingMode', 'shippingCost', 'shippingThreshold', 'lowPriceMethod', 'highPriceMethod',
-    'actualWeight', 'packageLength', 'packageWidth', 'packageHeight', 'shippingMethod'
+    'actualWeight', 'packageLength', 'packageWidth', 'packageHeight', 'shippingMethod',
+    'fedexFuelSurcharge', 'dhlFuelSurcharge', 'cpassDiscount', 'fedexExtraPer500g', 'dhlExtraPer500g'
   ];
 
   fields.forEach(field => {
@@ -207,7 +206,13 @@ function getSettingsFromForm() {
     packageLength: parseFloat(document.getElementById('packageLength').value) || DEFAULT_SETTINGS.packageLength,
     packageWidth: parseFloat(document.getElementById('packageWidth').value) || DEFAULT_SETTINGS.packageWidth,
     packageHeight: parseFloat(document.getElementById('packageHeight').value) || DEFAULT_SETTINGS.packageHeight,
-    shippingMethod: document.getElementById('shippingMethod').value
+    shippingMethod: document.getElementById('shippingMethod').value,
+    // サーチャージ・割引設定
+    fedexFuelSurcharge: parseFloat(document.getElementById('fedexFuelSurcharge').value) || DEFAULT_SETTINGS.fedexFuelSurcharge,
+    dhlFuelSurcharge: parseFloat(document.getElementById('dhlFuelSurcharge').value) || DEFAULT_SETTINGS.dhlFuelSurcharge,
+    cpassDiscount: parseFloat(document.getElementById('cpassDiscount').value) || DEFAULT_SETTINGS.cpassDiscount,
+    fedexExtraPer500g: parseFloat(document.getElementById('fedexExtraPer500g').value) || DEFAULT_SETTINGS.fedexExtraPer500g,
+    dhlExtraPer500g: parseFloat(document.getElementById('dhlExtraPer500g').value) || DEFAULT_SETTINGS.dhlExtraPer500g
   };
 }
 
@@ -266,6 +271,16 @@ function setupVolumetricWeightListeners() {
         calculateVolumetricWeight();
         calculateEstimatedShipping();
       });
+    }
+  });
+
+  // サーチャージ・割引設定のイベントリスナー
+  const surchargeFields = ['fedexFuelSurcharge', 'dhlFuelSurcharge', 'cpassDiscount', 'fedexExtraPer500g', 'dhlExtraPer500g'];
+  surchargeFields.forEach(field => {
+    const el = document.getElementById(field);
+    if (el) {
+      el.addEventListener('input', calculateEstimatedShipping);
+      el.addEventListener('change', calculateEstimatedShipping);
     }
   });
 }
@@ -454,6 +469,11 @@ function getEpacketRate(weight) {
  * Cpass-FedEx料金
  */
 function getCpassFedexRate(weight) {
+  // フォームから設定を取得
+  const fedexFuelSurcharge = parseFloat(document.getElementById('fedexFuelSurcharge')?.value) || DEFAULT_SETTINGS.fedexFuelSurcharge;
+  const cpassDiscount = parseFloat(document.getElementById('cpassDiscount')?.value) || DEFAULT_SETTINGS.cpassDiscount;
+  const fedexExtraPer500g = parseFloat(document.getElementById('fedexExtraPer500g')?.value) || DEFAULT_SETTINGS.fedexExtraPer500g;
+
   const rounded = Math.ceil(weight / 500) * 500;
   let base = null;
 
@@ -466,11 +486,14 @@ function getCpassFedexRate(weight) {
 
   if (!base) return 999999;
 
+  // 500gごとの追加料金
   const overUnits = Math.max(0, (rounded - 500) / 500);
-  const extra = overUnits * SHIPPING_CONFIG.fedexExtraPer500g;
+  const extra = overUnits * fedexExtraPer500g;
   const subTotal = base + extra;
-  const fuel = subTotal * SHIPPING_CONFIG.fedexFuel;
-  const discount = -(subTotal + fuel) * SHIPPING_CONFIG.cpassDiscount;
+  // 燃油サーチャージ
+  const fuel = subTotal * (fedexFuelSurcharge / 100);
+  // Cpass割引
+  const discount = -(subTotal + fuel) * (cpassDiscount / 100);
   return Math.round(subTotal + fuel + discount);
 }
 
@@ -478,6 +501,11 @@ function getCpassFedexRate(weight) {
  * Cpass-DHL料金
  */
 function getCpassDHLRate(weight) {
+  // フォームから設定を取得
+  const dhlFuelSurcharge = parseFloat(document.getElementById('dhlFuelSurcharge')?.value) || DEFAULT_SETTINGS.dhlFuelSurcharge;
+  const cpassDiscount = parseFloat(document.getElementById('cpassDiscount')?.value) || DEFAULT_SETTINGS.cpassDiscount;
+  const dhlExtraPer500g = parseFloat(document.getElementById('dhlExtraPer500g')?.value) || DEFAULT_SETTINGS.dhlExtraPer500g;
+
   const rounded = Math.ceil(weight / 500) * 500;
   let base = null;
 
@@ -490,11 +518,14 @@ function getCpassDHLRate(weight) {
 
   if (!base) return 999999;
 
+  // 500gごとの追加料金
   const overUnits = Math.max(0, (rounded - 500) / 500);
-  const extra = overUnits * SHIPPING_CONFIG.dhlExtraPer500g;
+  const extra = overUnits * dhlExtraPer500g;
   const subTotal = base + extra;
-  const fuel = subTotal * SHIPPING_CONFIG.dhlFuel;
-  const discount = -(subTotal + fuel) * SHIPPING_CONFIG.cpassDiscount;
+  // 燃油サーチャージ
+  const fuel = subTotal * (dhlFuelSurcharge / 100);
+  // Cpass割引
+  const discount = -(subTotal + fuel) * (cpassDiscount / 100);
   return Math.round(subTotal + fuel + discount);
 }
 

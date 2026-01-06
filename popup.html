@@ -552,6 +552,40 @@
               </select>
             </div>
           </div>
+
+          <!-- サーチャージ・割引設定 -->
+          <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #ccc;">
+            <h4 style="font-size: 11px; color: #495057; margin-bottom: 8px;">⛽ サーチャージ・割引</h4>
+            <div class="settings-grid-3">
+              <div class="input-group">
+                <label>FedEx燃油 (%)</label>
+                <input type="number" id="fedexFuelSurcharge" value="29.75" step="0.25">
+              </div>
+              <div class="input-group">
+                <label>DHL燃油 (%)</label>
+                <input type="number" id="dhlFuelSurcharge" value="30" step="0.25">
+              </div>
+              <div class="input-group">
+                <label>Cpass割引 (%)</label>
+                <input type="number" id="cpassDiscount" value="3" step="0.1">
+              </div>
+            </div>
+            <div class="settings-grid" style="margin-top: 8px;">
+              <div class="input-group">
+                <label>FedEx追加/500g (円)</label>
+                <input type="number" id="fedexExtraPer500g" value="115" step="1">
+              </div>
+              <div class="input-group">
+                <label>DHL追加/500g (円)</label>
+                <input type="number" id="dhlExtraPer500g" value="96" step="1">
+              </div>
+            </div>
+            <p class="hint" style="margin-top: 6px;">
+              燃油サーチャージは毎月変動します。<a href="https://www.fedex.com/ja-jp/shipping/rate-zone.html" target="_blank">FedEx</a> /
+              <a href="https://www.dhl.com/jp-ja/home/our-divisions/express/customer-service/fuel-surcharge.html" target="_blank">DHL</a>
+            </p>
+          </div>
+
           <table class="shipping-table" style="margin-top: 10px;">
             <thead>
               <tr>
@@ -577,7 +611,7 @@
   </div>
 
   <div class="footer">
-    しらべる君 v1.1.0 | メルカリ⇔eBay双方向リサーチ
+    しらべる君 v1.2.0 | メルカリ⇔eBay双方向リサーチ
   </div>
 
   <div class="toast" id="toast"></div>
