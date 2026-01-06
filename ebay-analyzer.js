@@ -373,6 +373,11 @@
         <div style="font-size: 11px; color: #666; margin-bottom: 4px;">中央値</div>
         <div style="font-size: 18px; font-weight: 600; color: #e65100;">$${stats.median.toFixed(2)}</div>
       </div>
+      <div style="margin-top: 12px; padding: 10px; background: #fafafa; border: 1px solid #e0e0e0; border-radius: 6px;">
+        <div style="font-size: 11px; color: #888; line-height: 1.5;">
+          ⚠️ <strong>参考値</strong>：USD以外の通貨（EUR等）やBest Offer成立価格が混在するため、正確な値ではありません
+        </div>
+      </div>
     `;
   }
 
