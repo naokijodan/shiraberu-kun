@@ -1,6 +1,6 @@
 /**
  * しらべる君 - eBay商品ページ用スクリプト
- * eBay商品詳細ページにリサーチボタンを追加
+ * eBay商品詳細ページにリサーチボタンと価格計算機能を追加
  */
 (function() {
   'use strict';
@@ -8,6 +8,20 @@
   console.log('[しらべる君 eBay商品] スクリプト読み込み');
 
   let currentPanel = null;
+  let priceCalculator = null;
+
+  /**
+   * 価格計算機を初期化
+   */
+  async function initPriceCalculator() {
+    if (typeof PriceCalculator !== 'undefined') {
+      priceCalculator = new PriceCalculator();
+      await priceCalculator.loadSettings();
+      console.log('[しらべる君 eBay商品] 価格計算機初期化完了');
+    } else {
+      console.log('[しらべる君 eBay商品] PriceCalculatorが見つかりません');
+    }
+  }
 
   /**
    * eBay商品詳細ページかどうかを判定
@@ -21,7 +35,6 @@
    * 商品タイトルを取得
    */
   function getProductTitle() {
-    // eBay商品ページのタイトルセレクタ
     const selectors = [
       'h1.x-item-title__mainTitle span',
       'h1[data-testid="x-item-title"]',
@@ -34,7 +47,6 @@
       const el = document.querySelector(selector);
       if (el) {
         const text = el.textContent?.trim() || '';
-        // "Details about" などのプレフィックスを除去
         const cleaned = text.replace(/^Details about\s*/i, '').trim();
         if (cleaned && cleaned.length > 5) {
           console.log('[しらべる君 eBay商品] タイトル取得:', cleaned.substring(0, 50));
@@ -45,6 +57,64 @@
 
     console.log('[しらべる君 eBay商品] タイトル取得失敗');
     return '';
+  }
+
+  /**
+   * 商品価格を取得（USD）
+   */
+  function getProductPrice() {
+    // 価格セレクタ（優先順位順）
+    const selectors = [
+      // 新しいeBayデザイン
+      '.x-price-primary span[itemprop="price"]',
+      '.x-price-primary .ux-textspans',
+      'div[data-testid="x-price-primary"] span',
+      // Buy It Nowの価格
+      '.x-bin-price__content .x-price-primary span',
+      '#prcIsum',
+      '#mm-saleDscPrc',
+      // 従来のデザイン
+      '.notranslate[itemprop="price"]',
+      '#prcIsum_bidPrice',
+      '.vi-price'
+    ];
+
+    for (const selector of selectors) {
+      const el = document.querySelector(selector);
+      if (el) {
+        let text = el.textContent?.trim() || '';
+        // data-value属性があれば優先
+        if (el.getAttribute('content')) {
+          const price = parseFloat(el.getAttribute('content'));
+          if (!isNaN(price) && price > 0) {
+            console.log('[しらべる君 eBay商品] 価格取得(content):', price);
+            return price;
+          }
+        }
+        // テキストから価格を抽出
+        const priceMatch = text.match(/\$?\s*([\d,]+\.?\d*)/);
+        if (priceMatch) {
+          const price = parseFloat(priceMatch[1].replace(/,/g, ''));
+          if (!isNaN(price) && price > 0) {
+            console.log('[しらべる君 eBay商品] 価格取得:', price, 'from:', text);
+            return price;
+          }
+        }
+      }
+    }
+
+    // meta tagからの取得を試みる
+    const metaPrice = document.querySelector('meta[itemprop="price"]');
+    if (metaPrice) {
+      const price = parseFloat(metaPrice.getAttribute('content'));
+      if (!isNaN(price) && price > 0) {
+        console.log('[しらべる君 eBay商品] 価格取得(meta):', price);
+        return price;
+      }
+    }
+
+    console.log('[しらべる君 eBay商品] 価格取得失敗');
+    return null;
   }
 
   /**
@@ -86,10 +156,8 @@
 
     document.body.appendChild(btn);
 
-    // ボタンをドラッグ可能に
     const dragState = makeDraggable(btn, btn);
 
-    // クリック時の処理（ドラッグと区別）
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -97,7 +165,78 @@
       showResearchPanel(title, btn);
     });
 
-    console.log('[しらべる君 eBay商品] ボタン追加完了（ドラッグ対応）');
+    console.log('[しらべる君 eBay商品] ボタン追加完了');
+  }
+
+  /**
+   * 仕入れ上限計算セクションのHTMLを生成
+   */
+  function generatePriceCalcSection(priceUSD) {
+    if (!priceCalculator || !priceUSD) {
+      return `
+        <div style="background: #fff3e0; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+          <div style="font-size: 12px; color: #e65100; font-weight: 600; margin-bottom: 8px;">💰 仕入れ上限計算</div>
+          <div style="font-size: 12px; color: #666;">価格情報を取得できませんでした</div>
+        </div>
+      `;
+    }
+
+    // eBay表示価格はDDU（税抜）として計算
+    const result = priceCalculator.calculateMaxPurchasePrice(priceUSD, false);
+
+    return `
+      <div style="background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #ffc107;">
+        <div style="font-size: 12px; color: #ff6f00; font-weight: 600; margin-bottom: 10px;">💰 仕入れ上限計算</div>
+
+        <!-- メイン結果 -->
+        <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11px; color: #666;">eBay価格 (DDU)</span>
+            <span style="font-size: 14px; font-weight: 600; color: #333;">$${priceUSD.toFixed(2)}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 2px dashed #ffc107;">
+            <span style="font-size: 12px; color: #ff6f00; font-weight: 600;">仕入れ上限（利益${result.targetProfitRate}%）</span>
+            <span style="font-size: 18px; font-weight: 700; color: #e65100;">¥${result.maxCostJPY.toLocaleString()}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+            <span style="font-size: 10px; color: #888;">損益分岐点</span>
+            <span style="font-size: 12px; color: #666;">¥${result.breakEvenCostJPY.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <!-- 詳細（折りたたみ） -->
+        <details style="font-size: 11px;">
+          <summary style="cursor: pointer; color: #666; margin-bottom: 6px;">📊 詳細を見る</summary>
+          <div style="background: #f5f5f5; padding: 8px; border-radius: 6px; margin-top: 6px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+              <span style="color: #333;">売上 (円換算)</span>
+              <span style="text-align: right; color: #333;">¥${result.ddpPriceJPY.toLocaleString()}</span>
+
+              <span style="color: #333;">eBay手数料（${priceCalculator.settings.feeRate}%）</span>
+              <span style="text-align: right; color: #c62828;">-¥${result.ebayFeeJPY.toLocaleString()}</span>
+
+              <span style="color: #333;">広告費（${priceCalculator.settings.adRate}%）</span>
+              <span style="text-align: right; color: #c62828;">-¥${result.adFeeJPY.toLocaleString()}</span>
+
+              <span style="color: #333;">Payoneer手数料（${priceCalculator.settings.payoneerRate}%）</span>
+              <span style="text-align: right; color: #c62828;">-¥${result.payoneerFeeJPY.toLocaleString()}</span>
+
+              <span style="color: #333;">関税（${priceCalculator.settings.tariffRate}%）</span>
+              <span style="text-align: right; color: #c62828;">-¥${result.tariffJPY.toLocaleString()}</span>
+
+              <span style="color: #333;">送料（${result.shippingMethodName}）</span>
+              <span style="text-align: right; color: #c62828;">-¥${result.shippingCostJPY.toLocaleString()}</span>
+
+              <span style="color: #333; border-top: 1px solid #ddd; padding-top: 4px;">目標利益（${result.targetProfitRate}%）</span>
+              <span style="text-align: right; color: #2e7d32; border-top: 1px solid #ddd; padding-top: 4px;">¥${result.targetProfitJPY.toLocaleString()}</span>
+            </div>
+            <div style="margin-top: 6px; font-size: 10px; color: #555;">
+              為替: $1 = ¥${result.exchangeRate}
+            </div>
+          </div>
+        </details>
+      </div>
+    `;
   }
 
   /**
@@ -105,6 +244,9 @@
    */
   function showResearchPanel(title, buttonElement) {
     closePanel();
+
+    const priceUSD = getProductPrice();
+    const priceCalcHtml = generatePriceCalcSection(priceUSD);
 
     const panel = document.createElement('div');
     panel.className = 'kuraberu-ebay-panel';
@@ -114,13 +256,15 @@
         position: fixed;
         top: 150px;
         right: 20px;
-        width: 360px;
+        width: 380px;
         background: white;
         border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.2);
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         z-index: 10000;
         overflow: hidden;
+        max-height: 90vh;
+        overflow-y: auto;
       ">
         <div style="
           background: linear-gradient(135deg, #0064d2 0%, #004a9e 100%);
@@ -129,6 +273,9 @@
           display: flex;
           justify-content: space-between;
           align-items: center;
+          position: sticky;
+          top: 0;
+          z-index: 1;
         ">
           <span style="font-weight: 600;">🔍 商品リサーチ</span>
           <button class="kuraberu-panel-close" style="
@@ -145,6 +292,9 @@
             <label style="font-size: 12px; color: #666;">商品タイトル:</label>
             <div style="font-size: 13px; color: #333; margin-top: 4px; max-height: 60px; overflow: hidden;">${escapeHtml(title.substring(0, 100))}${title.length > 100 ? '...' : ''}</div>
           </div>
+
+          <!-- 価格計算セクション -->
+          ${priceCalcHtml}
 
           <!-- eBay検索セクション -->
           <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
@@ -274,17 +424,14 @@
     document.body.appendChild(panel);
     currentPanel = panel;
 
-    // パネル内部の要素を取得
     const panelInner = panel.querySelector('div');
     const panelHeader = panelInner.querySelector('div');
 
-    // パネルをドラッグ可能に
     makeDraggable(panelInner, panelHeader);
 
     // イベントリスナー
     panel.querySelector('.kuraberu-panel-close').addEventListener('click', closePanel);
 
-    // eBay検索ボタン
     panel.querySelector('.kuraberu-search-btn').addEventListener('click', () => {
       const keyword = panel.querySelector('.kuraberu-keyword-input').value.trim();
       if (keyword) {
@@ -299,7 +446,6 @@
       }
     });
 
-    // Enterキーで検索
     panel.querySelector('.kuraberu-keyword-input').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         const keyword = panel.querySelector('.kuraberu-keyword-input').value.trim();
@@ -309,13 +455,11 @@
       }
     });
 
-    // 選択されたメルカリ翻訳オプションを取得する関数
     function getMercariSelectedOptions() {
       const checkboxes = panel.querySelectorAll('.kuraberu-mercari-options input[type="checkbox"]:checked');
       return Array.from(checkboxes).map(cb => cb.value);
     }
 
-    // メルカリ検索ボタン
     panel.querySelector('.kuraberu-ai-translate-btn').addEventListener('click', () => {
       const selectedOptions = getMercariSelectedOptions();
       if (selectedOptions.length === 0) {
@@ -334,7 +478,6 @@
       }
     });
 
-    // メルカリキーワードでEnterキー
     panel.querySelector('.kuraberu-mercari-keyword').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         const keyword = panel.querySelector('.kuraberu-mercari-keyword').value.trim();
@@ -347,23 +490,18 @@
 
   /**
    * AIでメルカリ検索キーワードを生成
-   * @param {string} title - 英語の商品タイトル
-   * @param {HTMLElement} panel - パネル要素
-   * @param {Array} options - 選択された要素の配列（例: ['brand', 'category']）
    */
   async function generateMercariKeyword(title, panel, options = ['brand', 'category']) {
     const messageEl = panel.querySelector('.kuraberu-message');
     const inputEl = panel.querySelector('.kuraberu-mercari-keyword');
     const aiBtn = panel.querySelector('.kuraberu-ai-translate-btn');
 
-    // ボタンを無効化
     aiBtn.disabled = true;
     aiBtn.textContent = '🔄 翻訳中...';
     messageEl.textContent = `🤖 AIが翻訳中...（${options.length}要素）`;
     messageEl.style.color = '#666';
 
     try {
-      // APIキー確認
       const checkResult = await chrome.runtime.sendMessage({ action: 'checkApiKey' });
 
       if (!checkResult.hasKey) {
@@ -371,7 +509,6 @@
         return;
       }
 
-      // バックグラウンドでキーワード生成（オプションを送信）
       const result = await chrome.runtime.sendMessage({
         action: 'generateMercariKeyword',
         title: title,
@@ -428,18 +565,16 @@
   }
 
   /**
-   * タイトルからキーワードを抽出（簡易版）
+   * タイトルからキーワードを抽出
    */
   function extractKeywords(title) {
-    // 不要な文字を除去
     let keywords = title
-      .replace(/\([^)]*\)/g, '') // 括弧内を除去
-      .replace(/\[[^\]]*\]/g, '') // 角括弧内を除去
-      .replace(/[^\w\s-]/g, ' ') // 特殊文字を除去
+      .replace(/\([^)]*\)/g, '')
+      .replace(/\[[^\]]*\]/g, '')
+      .replace(/[^\w\s-]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
 
-    // 最初の5単語程度を取得
     const words = keywords.split(' ').slice(0, 5);
     return words.join(' ');
   }
@@ -552,8 +687,7 @@
   /**
    * 初期化
    */
-  function init() {
-    // ページリロード時に古いUI要素をクリーンアップ
+  async function init() {
     document.querySelectorAll('.kuraberu-ebay-btn, .kuraberu-ebay-panel').forEach(el => el.remove());
     currentPanel = null;
 
@@ -563,10 +697,13 @@
     }
 
     console.log('[しらべる君 eBay商品] 商品ページを検出');
+
+    // 価格計算機を初期化
+    await initPriceCalculator();
+
     setTimeout(addResearchButton, 1500);
   }
 
-  // 初期化
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {

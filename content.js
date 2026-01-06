@@ -1,6 +1,7 @@
 /**
  * しらべる君 - Content Script
  * メルカリ商品ページにeBay調査ボタンを追加
+ * 価格計算機能を統合
  */
 (function() {
   'use strict';
@@ -10,6 +11,9 @@
 
   // 表示中のパネル
   let currentPanel = null;
+
+  // 価格計算インスタンス
+  let priceCalculator = null;
 
   /**
    * 商品ページかどうかを判定
@@ -116,6 +120,174 @@
   }
 
   /**
+   * メルカリ商品価格を取得
+   */
+  function getProductPrice() {
+    // メルカリ価格セレクタ（複数パターン対応）
+    const priceSelectors = [
+      'span[data-testid="price"]',
+      'mer-price[data-testid="price"]',
+      'div[data-testid="price"] span',
+      '.item-price',
+      'mer-price.sc-mer-price',
+      '[class*="Price"] span'
+    ];
+
+    for (const selector of priceSelectors) {
+      const el = document.querySelector(selector);
+      if (el) {
+        // 価格テキストから数値を抽出（¥1,234 → 1234）
+        const priceText = el.textContent || el.getAttribute('value') || '';
+        const priceMatch = priceText.replace(/[,，]/g, '').match(/[\d]+/);
+        if (priceMatch) {
+          const price = parseInt(priceMatch[0], 10);
+          console.log('[しらべる君] 価格取得成功:', selector, '->', price);
+          return price;
+        }
+      }
+    }
+
+    // フォールバック: ページ内の¥記号の後の数字を探す
+    const priceElements = document.querySelectorAll('span, div, p');
+    for (const el of priceElements) {
+      const text = el.textContent || '';
+      // ¥4,500 形式を探す（税込表示の近くにあるもの）
+      if (text.includes('¥') && text.includes('税込')) {
+        const match = text.replace(/[,，]/g, '').match(/¥([\d]+)/);
+        if (match) {
+          const price = parseInt(match[1], 10);
+          if (price > 0 && price < 10000000) {
+            console.log('[しらべる君] 価格取得(税込検索):', price);
+            return price;
+          }
+        }
+      }
+    }
+
+    // フォールバック2: metaタグから
+    const metaPrice = document.querySelector('meta[property="product:price:amount"]');
+    if (metaPrice) {
+      const price = parseInt(metaPrice.content, 10);
+      if (price > 0) {
+        console.log('[しらべる君] 価格取得(meta):', price);
+        return price;
+      }
+    }
+
+    // フォールバック3: 大きな数字で¥を含む要素を探す
+    const allText = document.body.innerText;
+    const bigPriceMatch = allText.match(/¥\s*([\d,]+)\s*[\(（]税込/);
+    if (bigPriceMatch) {
+      const price = parseInt(bigPriceMatch[1].replace(/,/g, ''), 10);
+      if (price > 0) {
+        console.log('[しらべる君] 価格取得(bodyテキスト):', price);
+        return price;
+      }
+    }
+
+    console.log('[しらべる君] 価格取得失敗');
+    return null;
+  }
+
+  /**
+   * 価格計算セクションのHTMLを生成
+   */
+  function generatePriceCalcSection(priceJPY) {
+    if (!priceJPY || !priceCalculator) {
+      console.log('[しらべる君] 価格計算スキップ: priceJPY=', priceJPY, 'calculator=', !!priceCalculator);
+      return '';
+    }
+
+    const result = priceCalculator.calculateEbaySellingPrice(priceJPY);
+    if (!result) {
+      return `
+        <div class="kuraberu-price-calc-section">
+          <div class="kuraberu-section-header">💰 価格計算</div>
+          <div class="kuraberu-price-error">設定を読み込めませんでした</div>
+        </div>
+      `;
+    }
+
+    const s = priceCalculator.settings;
+
+    // 手数料をUSDに変換
+    const ebayFeeUSD = result.ebayFeeJPY / s.exchangeRate;
+    const adFeeUSD = result.adFeeJPY / s.exchangeRate;
+    const payoneerFeeUSD = result.payoneerFeeJPY / s.exchangeRate;
+
+    return `
+      <div class="kuraberu-price-calc-section">
+        <div class="kuraberu-section-header">💰 eBay販売価格計算</div>
+        <div class="kuraberu-price-main">
+          <div class="kuraberu-price-row kuraberu-price-highlight">
+            <span class="kuraberu-price-label">メルカリ価格</span>
+            <span class="kuraberu-price-value">¥${priceJPY.toLocaleString()}</span>
+          </div>
+          <div class="kuraberu-price-row kuraberu-price-result">
+            <span class="kuraberu-price-label">eBay販売価格（DDU）</span>
+            <span class="kuraberu-price-value">$${result.dduPriceUSD.toFixed(2)}</span>
+          </div>
+          <div class="kuraberu-price-row">
+            <span class="kuraberu-price-label">eBay販売価格（DDP）</span>
+            <span class="kuraberu-price-value">$${result.ddpPriceUSD.toFixed(2)}</span>
+          </div>
+          <div class="kuraberu-price-row">
+            <span class="kuraberu-price-label">期待利益</span>
+            <span class="kuraberu-price-value kuraberu-profit">¥${result.profitJPY.toLocaleString()}</span>
+          </div>
+        </div>
+        <details class="kuraberu-price-details">
+          <summary>詳細内訳</summary>
+          <div class="kuraberu-price-breakdown">
+            <div class="kuraberu-price-row">
+              <span>仕入れ価格</span>
+              <span>¥${priceJPY.toLocaleString()}</span>
+            </div>
+            <div class="kuraberu-price-row">
+              <span>送料（${result.shippingMethodName}）</span>
+              <span>¥${result.shippingCostJPY.toLocaleString()}</span>
+            </div>
+            <div class="kuraberu-price-row">
+              <span>eBay手数料（${s.feeRate}%）</span>
+              <span>$${ebayFeeUSD.toFixed(2)}</span>
+            </div>
+            <div class="kuraberu-price-row">
+              <span>広告費（${s.adRate}%）</span>
+              <span>$${adFeeUSD.toFixed(2)}</span>
+            </div>
+            <div class="kuraberu-price-row">
+              <span>Payoneer手数料（${s.payoneerRate}%）</span>
+              <span>$${payoneerFeeUSD.toFixed(2)}</span>
+            </div>
+            <div class="kuraberu-price-row">
+              <span>目標利益率</span>
+              <span>${s.targetProfitRate}%</span>
+            </div>
+            <div class="kuraberu-price-row">
+              <span>為替レート</span>
+              <span>¥${s.exchangeRate}/USD</span>
+            </div>
+          </div>
+        </details>
+      </div>
+    `;
+  }
+
+  /**
+   * 価格計算を初期化
+   */
+  async function initPriceCalculator() {
+    if (typeof PriceCalculator !== 'undefined') {
+      priceCalculator = new PriceCalculator();
+      await priceCalculator.loadSettings();
+      console.log('[しらべる君] PriceCalculator 初期化完了');
+      return true;
+    }
+    console.log('[しらべる君] PriceCalculator が見つかりません');
+    return false;
+  }
+
+  /**
    * eBay調査ボタンを追加
    */
   function addResearchButton() {
@@ -167,12 +339,23 @@
   /**
    * 調査結果パネルを表示
    */
-  function showResearchPanel(originalTitle, originalDescription, buttonElement) {
+  async function showResearchPanel(originalTitle, originalDescription, buttonElement) {
     console.log('[しらべる君] パネル表示 - 元タイトル:', originalTitle);
     console.log('[しらべる君] パネル表示 - 元説明:', originalDescription?.substring(0, 100));
 
     // 既存のパネルを閉じる
     closePanel();
+
+    // PriceCalculatorが初期化されていなければ初期化
+    if (!priceCalculator) {
+      console.log('[しらべる君] PriceCalculator を遅延初期化');
+      await initPriceCalculator();
+    }
+
+    // 価格を取得
+    const price = getProductPrice();
+    console.log('[しらべる君] 取得した価格:', price, 'Calculator:', !!priceCalculator);
+    const priceCalcHtml = generatePriceCalcSection(price);
 
     // パネルを作成
     const panel = document.createElement('div');
@@ -184,6 +367,7 @@
         <button class="kuraberu-panel-close">✕</button>
       </div>
       <div class="kuraberu-panel-body">
+        ${priceCalcHtml}
         <div class="kuraberu-section">
           <label>元のタイトル:</label>
           <div class="kuraberu-original-title">${escapeHtml(originalTitle)}</div>
@@ -473,7 +657,7 @@
   /**
    * 初期化
    */
-  function init() {
+  async function init() {
     console.log('[しらべる君] 初期化開始');
 
     // ページリロード時に古いUI要素をクリーンアップ
@@ -484,6 +668,9 @@
       console.log('[しらべる君] 商品ページではないためスキップ');
       return;
     }
+
+    // 価格計算モジュールを初期化
+    await initPriceCalculator();
 
     // 少し遅延して実行
     setTimeout(addResearchButton, 1500);

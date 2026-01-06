@@ -275,3 +275,126 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* 価格計算セクション */
+.kuraberu-price-calc-section {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.kuraberu-section-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.kuraberu-price-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kuraberu-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  padding: 4px 0;
+}
+
+.kuraberu-price-label {
+  color: #666;
+}
+
+.kuraberu-price-value {
+  font-weight: 600;
+  color: #333;
+}
+
+.kuraberu-price-highlight {
+  background: #fff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+.kuraberu-price-highlight .kuraberu-price-value {
+  font-size: 15px;
+  color: #0064d2;
+}
+
+.kuraberu-price-result {
+  background: linear-gradient(135deg, #0064d2 0%, #004a9e 100%);
+  padding: 10px;
+  border-radius: 6px;
+  margin: 4px 0;
+}
+
+.kuraberu-price-result .kuraberu-price-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.kuraberu-price-result .kuraberu-price-value {
+  color: #fff;
+  font-size: 18px;
+}
+
+.kuraberu-profit {
+  color: #28a745 !important;
+}
+
+.kuraberu-break-even .kuraberu-price-value {
+  color: #dc3545;
+}
+
+/* 価格詳細（折りたたみ） */
+.kuraberu-price-details {
+  margin-top: 10px;
+}
+
+.kuraberu-price-details summary {
+  font-size: 11px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.kuraberu-price-details summary:hover {
+  color: #0064d2;
+}
+
+.kuraberu-price-breakdown {
+  padding: 10px;
+  background: #fff;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+
+.kuraberu-price-breakdown .kuraberu-price-row {
+  font-size: 11px;
+  padding: 3px 0;
+  border-bottom: 1px dashed #ddd;
+  color: #333;
+}
+
+.kuraberu-price-breakdown .kuraberu-price-row span {
+  color: #333;
+}
+
+.kuraberu-price-breakdown .kuraberu-price-row:last-child {
+  border-bottom: none;
+}
+
+.kuraberu-price-error {
+  color: #dc3545;
+  font-size: 12px;
+  padding: 8px;
+  background: #fff;
+  border-radius: 4px;
+}

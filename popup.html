@@ -3,16 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>しらべる君</title>
+  <title>しらべる君 設定</title>
   <style>
     * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
     }
 
     body {
-      width: 280px;
+      width: 380px;
+      max-height: 580px;
+      overflow-y: auto;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #fff;
     }
@@ -20,99 +22,566 @@
     .header {
       background: linear-gradient(135deg, #0064d2 0%, #004a9e 100%);
       color: white;
-      padding: 16px;
+      padding: 14px 16px;
       text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
 
     .header h1 {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .header p {
-      font-size: 11px;
-      opacity: 0.9;
     }
 
     .content {
-      padding: 16px;
-    }
-
-    .instruction {
-      background: #f5f9ff;
-      border-radius: 8px;
       padding: 12px;
+    }
+
+    .section {
       margin-bottom: 12px;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 8px;
     }
 
-    .instruction h2 {
+    .section h2 {
       font-size: 13px;
+      color: #333;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .section h2:hover {
       color: #0064d2;
-      margin-bottom: 8px;
     }
 
-    .instruction ol {
-      font-size: 12px;
-      color: #444;
-      padding-left: 20px;
+    .section-content {
+      display: block;
     }
 
-    .instruction li {
-      margin-bottom: 6px;
+    .section.collapsed .section-content {
+      display: none;
+    }
+
+    .collapse-icon {
+      font-size: 10px;
+      color: #888;
+      margin-left: auto;
+      transition: transform 0.2s;
+    }
+
+    .section.collapsed .collapse-icon {
+      transform: rotate(-90deg);
+    }
+
+    .input-group {
+      margin-bottom: 10px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .input-group input,
+    .input-group select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      transition: border-color 0.2s;
+    }
+
+    .input-group input:focus,
+    .input-group select:focus {
+      outline: none;
+      border-color: #0064d2;
+    }
+
+    .input-group input[readonly] {
+      background: #eee;
+      color: #666;
+    }
+
+    .api-key-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .api-key-row input {
+      flex: 1;
+    }
+
+    .toggle-btn {
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #f5f5f5;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .toggle-btn:hover {
+      background: #e0e0e0;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .settings-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .settings-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .settings-grid .input-group,
+    .settings-grid-3 .input-group,
+    .settings-grid-4 .input-group {
+      margin-bottom: 0;
+    }
+
+    .hint {
+      font-size: 10px;
+      color: #888;
+      margin-top: 4px;
       line-height: 1.4;
     }
 
-    .tip {
-      background: #fff8e5;
-      border-left: 3px solid #ffc107;
-      padding: 10px 12px;
-      font-size: 11px;
-      color: #666;
-      margin-bottom: 12px;
+    .hint a {
+      color: #0064d2;
     }
 
-    .version {
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0064d2 0%, #004a9e 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 100, 210, 0.3);
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    .btn-refresh {
+      padding: 8px 10px;
+      background: #17a2b8;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .btn-refresh:hover {
+      background: #138496;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn-row .btn {
+      flex: 1;
+    }
+
+    .status {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+    }
+
+    .status-success {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .status-warning {
+      background: #fff3e0;
+      color: #e65100;
+    }
+
+    .status-error {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .rate-row {
+      display: flex;
+      gap: 6px;
+      align-items: flex-end;
+    }
+
+    .rate-row .input-group {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .subsection {
+      background: #fff;
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .subsection h3 {
+      font-size: 12px;
+      color: #495057;
+      margin-bottom: 8px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* 送料試算表 */
+    .shipping-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 10px;
+    }
+
+    .shipping-table th,
+    .shipping-table td {
+      padding: 5px 6px;
+      text-align: left;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    .shipping-table th {
+      background: #495057;
+      color: white;
+      font-weight: 600;
+    }
+
+    .shipping-table tr.selected {
+      background: #e3f2fd;
+      font-weight: 600;
+    }
+
+    .shipping-table tr.unavailable {
+      color: #999;
+      text-decoration: line-through;
+    }
+
+    .shipping-table .cost-cell {
+      text-align: right;
+    }
+
+    /* トースト */
+    .toast {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%) translateY(50px);
+      background: #333;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      background: #2e7d32;
+    }
+
+    .toast.error {
+      background: #c62828;
+    }
+
+    .footer {
+      padding: 10px 12px;
+      background: #f5f5f5;
       text-align: center;
       font-size: 10px;
-      color: #999;
-      padding-top: 8px;
-      border-top: 1px solid #eee;
+      color: #888;
     }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>🔍 しらべる君</h1>
-    <p>メルカリ⇔eBay 双方向リサーチ</p>
+    <h1>🔍 しらべる君 設定</h1>
   </div>
 
   <div class="content">
-    <div class="instruction">
-      <h2>📦 メルカリ → eBay</h2>
-      <ol>
-        <li>メルカリで商品ページを開く</li>
-        <li>「🔍 eBay調査」ボタンをクリック</li>
-        <li>eBayでの販売価格を確認</li>
-      </ol>
+    <!-- API Key Section -->
+    <div class="section" id="section-api">
+      <h2 class="section-header">
+        🔐 OpenAI APIキー
+        <span class="collapse-icon">▼</span>
+      </h2>
+      <div class="section-content">
+        <div class="input-group">
+          <label>API Key</label>
+          <div class="api-key-row">
+            <input type="password" id="openaiKey" placeholder="sk-...">
+            <button class="toggle-btn" id="toggleVisibility">👁</button>
+          </div>
+          <p class="hint">
+            AI翻訳機能に必要。<a href="https://platform.openai.com/api-keys" target="_blank">取得はこちら</a>
+          </p>
+        </div>
+        <div id="apiKeyStatus"></div>
+      </div>
     </div>
 
-    <div class="instruction">
-      <h2>🇯🇵 eBay → メルカリ</h2>
-      <ol>
-        <li>eBayで商品ページを開く</li>
-        <li>「🔍 市場調査」ボタンをクリック</li>
-        <li>AI翻訳でメルカリを検索</li>
-      </ol>
+    <!-- 基本設定 -->
+    <div class="section" id="section-basic">
+      <h2 class="section-header">
+        💰 基本設定
+        <span class="collapse-icon">▼</span>
+      </h2>
+      <div class="section-content">
+        <div class="settings-grid">
+          <div class="input-group">
+            <label>為替レート (USD/JPY)</label>
+            <div class="rate-row">
+              <div class="input-group">
+                <input type="number" id="exchangeRate" value="155" step="0.01">
+              </div>
+              <button class="btn-refresh" id="refreshRateBtn">🔄</button>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>目標利益率 (%)</label>
+            <input type="number" id="targetProfitRate" value="20" step="1">
+          </div>
+        </div>
+
+        <div class="settings-grid-4" style="margin-top: 10px;">
+          <div class="input-group">
+            <label>eBay手数料 (%)</label>
+            <input type="number" id="feeRate" value="18" step="0.1">
+          </div>
+          <div class="input-group">
+            <label>広告費 (%)</label>
+            <input type="number" id="adRate" value="10" step="0.1">
+          </div>
+          <div class="input-group">
+            <label>Payoneer (%)</label>
+            <input type="number" id="payoneerRate" value="2" step="0.1">
+          </div>
+          <div class="input-group">
+            <label>安全係数 (%)</label>
+            <input type="number" id="safetyMargin" value="3" step="0.1">
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="tip">
-      💡 AI翻訳機能を使うには、設定画面でOpenAI APIキーを入力してください。
+    <!-- 関税設定 -->
+    <div class="section collapsed" id="section-tariff">
+      <h2 class="section-header">
+        🛃 関税・通関設定
+        <span class="collapse-icon">▼</span>
+      </h2>
+      <div class="section-content">
+        <div class="settings-grid-3">
+          <div class="input-group">
+            <label>関税率 (%)</label>
+            <input type="number" id="tariffRate" value="15" step="0.1">
+          </div>
+          <div class="input-group">
+            <label>VAT率 (%)</label>
+            <input type="number" id="vatRate" value="0" step="0.1">
+          </div>
+          <div class="input-group">
+            <label>通関処理 (%)</label>
+            <input type="number" id="processingFeeRate" value="2.1" step="0.1">
+          </div>
+        </div>
+        <div class="settings-grid-4" style="margin-top: 10px;">
+          <div class="input-group">
+            <label>MPF (円)</label>
+            <input type="number" id="mpf" value="0" step="1">
+          </div>
+          <div class="input-group">
+            <label>CE通関 (円)</label>
+            <input type="number" id="ceMpf" value="296" step="1">
+          </div>
+          <div class="input-group">
+            <label>MPF ($)</label>
+            <input type="number" id="mpfUsd" value="0" step="0.01">
+          </div>
+          <div class="input-group">
+            <label>EU送料差 (円)</label>
+            <input type="number" id="euShippingDiff" value="0" step="10">
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="version">
-      Version 1.0.0
+    <!-- 送料設定 -->
+    <div class="section collapsed" id="section-shipping">
+      <h2 class="section-header">
+        📦 送料設定
+        <span class="collapse-icon">▼</span>
+      </h2>
+      <div class="section-content">
+        <div class="settings-grid">
+          <div class="input-group">
+            <label>送料計算モード</label>
+            <select id="shippingMode">
+              <option value="fixed">固定送料</option>
+              <option value="table">テーブル計算</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>切替基準金額 (円)</label>
+            <input type="number" id="shippingThreshold" value="5500" step="100">
+          </div>
+        </div>
+
+        <div class="settings-grid" style="margin-top: 8px;">
+          <div class="input-group">
+            <label>低価格配送</label>
+            <select id="lowPriceMethod">
+              <option value="EP">eパケット</option>
+              <option value="CE">Cpass-Economy</option>
+              <option value="EL">eLogistics</option>
+              <option value="NONE">使用しない</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>高価格配送</label>
+            <select id="highPriceMethod">
+              <option value="CF" selected>Cpass-FedEx</option>
+              <option value="CD">Cpass-DHL</option>
+              <option value="EL">eLogistics</option>
+              <option value="EMS">EMS</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 固定送料 -->
+        <div class="subsection" id="fixedShippingSettings">
+          <h3>💰 固定送料</h3>
+          <div class="input-group">
+            <label>送料 (円)</label>
+            <input type="number" id="shippingCost" value="3000" step="100">
+          </div>
+        </div>
+
+        <!-- テーブル計算 -->
+        <div class="subsection hidden" id="tableShippingSettings">
+          <h3>📊 テーブル計算</h3>
+          <div class="settings-grid-4">
+            <div class="input-group">
+              <label>実重量 (g)</label>
+              <input type="number" id="actualWeight" value="500" step="10">
+            </div>
+            <div class="input-group">
+              <label>長さ (cm)</label>
+              <input type="number" id="packageLength" value="20" step="1">
+            </div>
+            <div class="input-group">
+              <label>幅 (cm)</label>
+              <input type="number" id="packageWidth" value="20" step="1">
+            </div>
+            <div class="input-group">
+              <label>高さ (cm)</label>
+              <input type="number" id="packageHeight" value="20" step="1">
+            </div>
+          </div>
+          <div class="settings-grid-3" style="margin-top: 8px;">
+            <div class="input-group">
+              <label>容積(÷5)</label>
+              <input type="number" id="volumetricWeight" value="0" readonly>
+            </div>
+            <div class="input-group">
+              <label>容積(÷8)</label>
+              <input type="number" id="volumetricWeightCE" value="0" readonly>
+            </div>
+            <div class="input-group">
+              <label>配送方法</label>
+              <select id="shippingMethod">
+                <option value="自動選択">自動選択</option>
+                <option value="EP">eパケット</option>
+                <option value="CE">Cpass-Economy</option>
+                <option value="CF">Cpass-FedEx</option>
+                <option value="CD">Cpass-DHL</option>
+                <option value="EL">eLogistics</option>
+                <option value="EMS">EMS</option>
+              </select>
+            </div>
+          </div>
+          <table class="shipping-table" style="margin-top: 10px;">
+            <thead>
+              <tr>
+                <th>配送方法</th>
+                <th>重量</th>
+                <th class="cost-cell">送料</th>
+              </tr>
+            </thead>
+            <tbody id="shippingEstimateBody">
+              <tr><td colspan="3" style="text-align: center; color: #888;">設定を入力してください</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
+
+    <!-- 保存ボタン -->
+    <div class="btn-row">
+      <button class="btn btn-primary" id="saveBtn">💾 保存</button>
+      <button class="btn btn-secondary" id="resetBtn">🔄 リセット</button>
+    </div>
+    <div id="saveStatus"></div>
   </div>
+
+  <div class="footer">
+    しらべる君 v1.1.0 | メルカリ⇔eBay双方向リサーチ
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="options.js"></script>
 </body>
 </html>
