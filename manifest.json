@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "しらべる君 - eBay価格リサーチ",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "メルカリ⇔eBay双方向リサーチ。AI翻訳、価格分析、テラピーク連携で輸出入をサポート",
   "permissions": ["storage", "tabs"],
   "host_permissions": [
