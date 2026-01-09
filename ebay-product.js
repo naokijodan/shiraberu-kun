@@ -135,6 +135,53 @@
   }
 
   /**
+   * Shipping（送料+関税）を自動取得（USD）
+   * @returns {Object} { amount: number|null, rawText: string, isAuto: boolean }
+   */
+  function getShippingInfo() {
+    // Shippingセレクタ（優先順位順）
+    const selectors = [
+      // 新しいデザイン - メイン送料
+      '[data-testid="ux-labels-values-shipping"] .ux-textspans--BOLD',
+      '.ux-labels-values--shipping .ux-textspans--BOLD',
+      '.x-price-shipping .ux-textspans',
+      // Import charges (関税・輸入税含む)
+      '[data-testid="x-shipping-import-charges"] .ux-textspans--BOLD',
+      // 従来のデザイン
+      '#fshippingCost span',
+      '#shSummary .sh-txt'
+    ];
+
+    for (const selector of selectors) {
+      const el = document.querySelector(selector);
+      if (el) {
+        const text = el.textContent?.trim() || '';
+        if (!text) continue;
+
+        console.log('[しらべる君 eBay商品] Shipping要素発見:', selector, text);
+
+        // Free shippingの判定
+        if (text.toLowerCase().includes('free') || text.includes('無料')) {
+          return { amount: 0, rawText: text, isAuto: true };
+        }
+
+        // 金額を抽出（$XX.XX形式）
+        const priceMatch = text.match(/\$\s*([\d,]+\.?\d*)/);
+        if (priceMatch) {
+          const amount = parseFloat(priceMatch[1].replace(/,/g, ''));
+          if (!isNaN(amount)) {
+            console.log('[しらべる君 eBay商品] Shipping金額取得:', amount);
+            return { amount: amount, rawText: text, isAuto: true };
+          }
+        }
+      }
+    }
+
+    console.log('[しらべる君 eBay商品] Shipping自動取得失敗');
+    return { amount: null, rawText: '', isAuto: false };
+  }
+
+  /**
    * リサーチボタンを追加
    */
   function addResearchButton() {
@@ -218,7 +265,7 @@
   /**
    * 仕入れ上限計算セクションのHTMLを生成
    */
-  function generatePriceCalcSection(priceUSD, isPremium) {
+  function generatePriceCalcSection(priceUSD, shippingInfo, isPremium) {
     // プレミアムでない場合は案内を表示
     if (!isPremium) {
       return generatePremiumPromptSection();
@@ -233,54 +280,86 @@
       `;
     }
 
-    // eBay表示価格はDDU（税抜）として計算
-    const result = priceCalculator.calculateMaxPurchasePrice(priceUSD, false);
+    // Shippingの初期値
+    const shippingAmount = shippingInfo.amount !== null ? shippingInfo.amount : 0;
+    const shippingAutoText = shippingInfo.isAuto ? '（自動取得）' : '（手入力）';
+
+    // DDP価格を計算
+    const ddpPriceUSD = priceUSD + shippingAmount;
+
+    // DDP価格として計算（Shipping=関税として扱う）
+    const result = priceCalculator.calculateMaxPurchasePrice(ddpPriceUSD, true);
 
     return `
-      <div style="background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #ffc107;">
+      <div class="kuraberu-price-calc-section" style="background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #ffc107;">
         <div style="font-size: 12px; color: #ff6f00; font-weight: 600; margin-bottom: 10px;">💰 仕入れ上限計算</div>
 
-        <!-- メイン結果 -->
-        <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+        <!-- 価格入力エリア -->
+        <div style="background: white; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 11px; color: #666;">eBay価格 (DDU)</span>
+            <span style="font-size: 11px; color: #666;">eBay表示価格</span>
             <span style="font-size: 14px; font-weight: 600; color: #333;">$${priceUSD.toFixed(2)}</span>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 2px dashed #ffc107;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11px; color: #666;">
+              Shipping（税込）
+              <span style="font-size: 9px; color: ${shippingInfo.isAuto ? '#4caf50' : '#999'};">${shippingAutoText}</span>
+            </span>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 12px; color: #333;">$</span>
+              <input type="number" class="kuraberu-shipping-input" value="${shippingAmount.toFixed(2)}" step="0.01" min="0" style="
+                width: 70px;
+                padding: 4px 6px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                font-size: 12px;
+                text-align: right;
+              ">
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid #e0e0e0;">
+            <span style="font-size: 12px; color: #333; font-weight: 600;">DDP価格（税込合計）</span>
+            <span class="kuraberu-ddp-price" style="font-size: 14px; font-weight: 700; color: #0064d2;">$${ddpPriceUSD.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <!-- 計算結果 -->
+        <div class="kuraberu-calc-result" style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 12px; color: #ff6f00; font-weight: 600;">仕入れ上限（利益${result.targetProfitRate}%）</span>
-            <span style="font-size: 18px; font-weight: 700; color: #e65100;">¥${result.maxCostJPY.toLocaleString()}</span>
+            <span class="kuraberu-max-cost" style="font-size: 18px; font-weight: 700; color: #e65100;">¥${result.maxCostJPY.toLocaleString()}</span>
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
             <span style="font-size: 10px; color: #888;">損益分岐点</span>
-            <span style="font-size: 12px; color: #666;">¥${result.breakEvenCostJPY.toLocaleString()}</span>
+            <span class="kuraberu-breakeven" style="font-size: 12px; color: #666;">¥${result.breakEvenCostJPY.toLocaleString()}</span>
           </div>
         </div>
 
         <!-- 詳細（折りたたみ） -->
         <details style="font-size: 11px;">
           <summary style="cursor: pointer; color: #666; margin-bottom: 6px;">📊 詳細を見る</summary>
-          <div style="background: #f5f5f5; padding: 8px; border-radius: 6px; margin-top: 6px;">
+          <div class="kuraberu-calc-details" style="background: #f5f5f5; padding: 8px; border-radius: 6px; margin-top: 6px;">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
-              <span style="color: #333;">売上 (円換算)</span>
-              <span style="text-align: right; color: #333;">¥${result.ddpPriceJPY.toLocaleString()}</span>
+              <span style="color: #333;">DDP売上 (円換算)</span>
+              <span class="detail-ddp-jpy" style="text-align: right; color: #333;">¥${result.ddpPriceJPY.toLocaleString()}</span>
 
               <span style="color: #333;">eBay手数料（${priceCalculator.settings.feeRate}%）</span>
-              <span style="text-align: right; color: #c62828;">-¥${result.ebayFeeJPY.toLocaleString()}</span>
+              <span class="detail-ebay-fee" style="text-align: right; color: #c62828;">-¥${result.ebayFeeJPY.toLocaleString()}</span>
 
               <span style="color: #333;">広告費（${priceCalculator.settings.adRate}%）</span>
-              <span style="text-align: right; color: #c62828;">-¥${result.adFeeJPY.toLocaleString()}</span>
+              <span class="detail-ad-fee" style="text-align: right; color: #c62828;">-¥${result.adFeeJPY.toLocaleString()}</span>
 
-              <span style="color: #333;">Payoneer手数料（${priceCalculator.settings.payoneerRate}%）</span>
-              <span style="text-align: right; color: #c62828;">-¥${result.payoneerFeeJPY.toLocaleString()}</span>
+              <span style="color: #333;">Payoneer（${priceCalculator.settings.payoneerRate}%）</span>
+              <span class="detail-payoneer" style="text-align: right; color: #c62828;">-¥${result.payoneerFeeJPY.toLocaleString()}</span>
 
-              <span style="color: #333;">関税（${priceCalculator.settings.tariffRate}%）</span>
-              <span style="text-align: right; color: #c62828;">-¥${result.tariffJPY.toLocaleString()}</span>
+              <span style="color: #333;">関税（設定${priceCalculator.settings.tariffRate}%）</span>
+              <span class="detail-tariff" style="text-align: right; color: #c62828;">-¥${result.tariffJPY.toLocaleString()}</span>
 
               <span style="color: #333;">送料（${result.shippingMethodName}）</span>
-              <span style="text-align: right; color: #c62828;">-¥${result.shippingCostJPY.toLocaleString()}</span>
+              <span class="detail-shipping" style="text-align: right; color: #c62828;">-¥${result.shippingCostJPY.toLocaleString()}</span>
 
               <span style="color: #333; border-top: 1px solid #ddd; padding-top: 4px;">目標利益（${result.targetProfitRate}%）</span>
-              <span style="text-align: right; color: #2e7d32; border-top: 1px solid #ddd; padding-top: 4px;">¥${result.targetProfitJPY.toLocaleString()}</span>
+              <span class="detail-profit" style="text-align: right; color: #2e7d32; border-top: 1px solid #ddd; padding-top: 4px;">¥${result.targetProfitJPY.toLocaleString()}</span>
             </div>
             <div style="margin-top: 6px; font-size: 10px; color: #555;">
               為替: $1 = ¥${result.exchangeRate}
@@ -301,7 +380,8 @@
     const isPremium = await checkPremiumStatus();
 
     const priceUSD = getProductPrice();
-    const priceCalcHtml = generatePriceCalcSection(priceUSD, isPremium);
+    const shippingInfo = getShippingInfo();
+    const priceCalcHtml = generatePriceCalcSection(priceUSD, shippingInfo, isPremium);
 
     const panel = document.createElement('div');
     panel.className = 'kuraberu-ebay-panel';
@@ -548,6 +628,44 @@
     if (premiumSettingsBtn) {
       premiumSettingsBtn.addEventListener('click', () => {
         chrome.runtime.sendMessage({ action: 'openOptionsPage' });
+      });
+    }
+
+    // Shipping入力欄の変更時に再計算
+    const shippingInput = panel.querySelector('.kuraberu-shipping-input');
+    if (shippingInput && priceCalculator && priceUSD) {
+      shippingInput.addEventListener('input', () => {
+        const shippingAmount = parseFloat(shippingInput.value) || 0;
+        const ddpPriceUSD = priceUSD + shippingAmount;
+
+        // DDP価格として再計算
+        const result = priceCalculator.calculateMaxPurchasePrice(ddpPriceUSD, true);
+
+        // UI更新
+        const ddpPriceEl = panel.querySelector('.kuraberu-ddp-price');
+        const maxCostEl = panel.querySelector('.kuraberu-max-cost');
+        const breakevenEl = panel.querySelector('.kuraberu-breakeven');
+
+        if (ddpPriceEl) ddpPriceEl.textContent = `$${ddpPriceUSD.toFixed(2)}`;
+        if (maxCostEl) maxCostEl.textContent = `¥${result.maxCostJPY.toLocaleString()}`;
+        if (breakevenEl) breakevenEl.textContent = `¥${result.breakEvenCostJPY.toLocaleString()}`;
+
+        // 詳細も更新
+        const detailDdpJpy = panel.querySelector('.detail-ddp-jpy');
+        const detailEbayFee = panel.querySelector('.detail-ebay-fee');
+        const detailAdFee = panel.querySelector('.detail-ad-fee');
+        const detailPayoneer = panel.querySelector('.detail-payoneer');
+        const detailTariff = panel.querySelector('.detail-tariff');
+        const detailShipping = panel.querySelector('.detail-shipping');
+        const detailProfit = panel.querySelector('.detail-profit');
+
+        if (detailDdpJpy) detailDdpJpy.textContent = `¥${result.ddpPriceJPY.toLocaleString()}`;
+        if (detailEbayFee) detailEbayFee.textContent = `-¥${result.ebayFeeJPY.toLocaleString()}`;
+        if (detailAdFee) detailAdFee.textContent = `-¥${result.adFeeJPY.toLocaleString()}`;
+        if (detailPayoneer) detailPayoneer.textContent = `-¥${result.payoneerFeeJPY.toLocaleString()}`;
+        if (detailTariff) detailTariff.textContent = `-¥${result.tariffJPY.toLocaleString()}`;
+        if (detailShipping) detailShipping.textContent = `-¥${result.shippingCostJPY.toLocaleString()}`;
+        if (detailProfit) detailProfit.textContent = `¥${result.targetProfitJPY.toLocaleString()}`;
       });
     }
   }
