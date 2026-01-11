@@ -125,6 +125,7 @@
   function getProductPrice() {
     // メルカリ価格セレクタ（複数パターン対応）
     const priceSelectors = [
+      '[data-testid="product-price"]',  // メルカリショップ用
       'span[data-testid="price"]',
       'mer-price[data-testid="price"]',
       'div[data-testid="price"] span',
