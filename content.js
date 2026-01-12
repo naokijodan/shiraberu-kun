@@ -456,7 +456,7 @@
         <div class="kuraberu-section-divider" style="border-top: 1px solid #e0e0e0; margin: 16px 0;"></div>
         <div class="kuraberu-section">
           <label>メルカリ検索キーワード:</label>
-          <input type="text" class="kuraberu-mercari-keyword-input" placeholder="検索キーワードを編集してください" value="${escapeHtml(originalTitle)}">
+          <input type="text" class="kuraberu-keyword-input kuraberu-mercari-keyword-input" placeholder="検索キーワードを編集してください" value="${escapeHtml(originalTitle)}">
         </div>
         <div class="kuraberu-buttons">
           <button class="kuraberu-mercari-search-btn">🔍 メルカリで検索</button>
