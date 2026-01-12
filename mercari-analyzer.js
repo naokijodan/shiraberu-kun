@@ -132,11 +132,51 @@
   }
 
   /**
+   * PR/スポンサー商品かどうかを判定
+   */
+  function isAdOrSponsor(item) {
+    // PR商品を除外（PRバッジがある商品）
+    const prBadge = item.querySelector('[class*="Badge"]');
+    if (prBadge && prBadge.textContent.includes('PR')) {
+      return true;
+    }
+
+    // テキスト内に「PR」があるかチェック
+    const itemText = item.textContent || '';
+    if (itemText.includes('PR') && itemText.indexOf('PR') < 50) {
+      // 先頭付近にPRがある場合は広告の可能性
+      return true;
+    }
+
+    // スポンサー・関連商品セクション内かどうかチェック
+    const parent = item.closest('[class*="sponsor"]') ||
+                   item.closest('[class*="Sponsor"]') ||
+                   item.closest('[class*="related"]') ||
+                   item.closest('[class*="Related"]');
+    if (parent) {
+      return true;
+    }
+
+    // 外部サイトのリンクかどうかチェック
+    const link = item.querySelector('a') || (item.tagName === 'A' ? item : null);
+    if (link) {
+      const href = link.getAttribute('href') || '';
+      // メルカリ内部リンク以外は除外
+      if (href.startsWith('http') && !href.includes('jp.mercari.com')) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * ページから価格データを抽出
    */
   function extractPrices() {
     const prices = [];
     const seenItems = new Set(); // 重複防止用
+    let skippedAds = 0;
 
     // 複数のセレクタを試す（メルカリはDOM構造が変わることがある）
     const selectors = [
@@ -165,11 +205,21 @@
     console.log('[しらべる君 メルカリ] 検出アイテム数:', items.length);
 
     items.forEach((item, index) => {
+      // PR/スポンサー商品を除外
+      if (isAdOrSponsor(item)) {
+        skippedAds++;
+        return;
+      }
+
       // 商品IDで重複チェック（href属性から商品IDを抽出）
       const link = item.querySelector('a[href*="/item/"]') || (item.tagName === 'A' ? item : null);
       if (link) {
         const href = link.getAttribute('href');
-        const itemIdMatch = href.match(/\/item\/([a-zA-Z0-9]+)/);
+        // メルカリの商品リンクのみを対象（/item/m で始まる）
+        if (!href.includes('/item/m')) {
+          return; // メルカリ商品以外はスキップ
+        }
+        const itemIdMatch = href.match(/\/item\/(m[a-zA-Z0-9]+)/);
         if (itemIdMatch) {
           const itemId = itemIdMatch[1];
           if (seenItems.has(itemId)) {
@@ -241,6 +291,7 @@
     });
 
     console.log('[しらべる君 メルカリ] 抽出した価格:', prices.length, '件');
+    console.log('[しらべる君 メルカリ] スキップしたPR/広告:', skippedAds, '件');
     if (prices.length > 0) {
       console.log('[しらべる君 メルカリ] 価格サンプル:', prices.slice(0, 10).map(p => '¥' + p.toLocaleString()));
       console.log('[しらべる君 メルカリ] 最小:', Math.min(...prices), '最大:', Math.max(...prices));
