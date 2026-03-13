@@ -12,6 +12,7 @@
   let isPremiumCached = null;
   // ボタン追加を諦めたフラグ（MutationObserver等の無限呼び出し防止）
   let buttonGaveUp = false;
+  let initialLoadDone = false;
 
   // セラータイプ定義
   const SELLER_TYPES = {
@@ -1259,7 +1260,11 @@
     // 価格計算機を初期化
     await initPriceCalculator();
 
-    setTimeout(addResearchButton, 4000);
+    // 初期ロード完了後にボタン追加（4秒待機）
+    setTimeout(() => {
+      initialLoadDone = true;
+      addResearchButton();
+    }, 4000);
   }
 
   if (document.readyState === 'loading') {

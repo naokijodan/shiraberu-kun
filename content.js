@@ -17,6 +17,7 @@
 
   // ボタン追加を諦めたフラグ（MutationObserverの無限呼び出し防止）
   let buttonGaveUp = false;
+  let initialLoadDone = false;
 
   // セラータイプ定義
   const SELLER_TYPES = {
@@ -1194,12 +1195,15 @@
     // 価格計算モジュールを初期化
     await initPriceCalculator();
 
-    // 少し遅延して実行
-    setTimeout(addResearchButton, 4000);
+    // 少し遅延して実行（初期ロード完了フラグを立ててから）
+    setTimeout(() => {
+      initialLoadDone = true;
+      addResearchButton();
+    }, 4000);
 
     // DOM変更を監視
     const observer = new MutationObserver(() => {
-      if (isProductPage() && !document.querySelector('.kuraberu-btn')) {
+      if (initialLoadDone && isProductPage() && !document.querySelector('.kuraberu-btn')) {
         addResearchButton();
       }
     });
@@ -1223,6 +1227,7 @@
     if (window.location.href !== lastUrl) {
       lastUrl = window.location.href;
       buttonGaveUp = false;  // URL変更時にリセット
+      initialLoadDone = false;  // 初期ロード完了フラグもリセット
       console.log('[しらべる君] URL変更検知:', lastUrl);
       if (isProductPage() && !document.querySelector('.kuraberu-btn')) {
         setTimeout(addResearchButton, 4000);
