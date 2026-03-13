@@ -451,7 +451,7 @@
   /**
    * eBay調査ボタンを追加
    */
-  function addResearchButton() {
+  function addResearchButton(isRetry = false) {
     console.log('[しらべる君] ボタン追加処理開始');
 
     // 既にボタンがあれば何もしない
@@ -462,8 +462,12 @@
     // 商品タイトルを取得
     const title = getProductTitle();
     if (!title) {
-      console.log('[しらべる君] タイトルが見つかりません。2秒後に再試行...');
-      setTimeout(addResearchButton, 2000);
+      if (!isRetry) {
+        console.log('[しらべる君] タイトルが見つかりません。2秒後にリトライ...');
+        setTimeout(() => addResearchButton(true), 2000);
+      } else {
+        console.log('[しらべる君] リトライでもタイトル取得失敗。処理終了');
+      }
       return;
     }
 
@@ -1182,7 +1186,7 @@
     await initPriceCalculator();
 
     // 少し遅延して実行
-    setTimeout(addResearchButton, 1500);
+    setTimeout(addResearchButton, 4000);
 
     // DOM変更を監視
     const observer = new MutationObserver(() => {
@@ -1211,7 +1215,7 @@
       lastUrl = window.location.href;
       console.log('[しらべる君] URL変更検知:', lastUrl);
       if (isProductPage() && !document.querySelector('.kuraberu-btn')) {
-        setTimeout(addResearchButton, 1500);
+        setTimeout(addResearchButton, 4000);
       }
     }
   }, 1000);
