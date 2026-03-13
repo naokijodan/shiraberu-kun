@@ -10,6 +10,8 @@
   let currentPanel = null;
   let priceCalculator = null;
   let isPremiumCached = null;
+  // ボタン追加を諦めたフラグ（MutationObserver等の無限呼び出し防止）
+  let buttonGaveUp = false;
 
   // セラータイプ定義
   const SELLER_TYPES = {
@@ -294,6 +296,9 @@
    * リサーチボタンを追加
    */
   function addResearchButton(isRetry = false) {
+    if (buttonGaveUp) {
+      return;
+    }
     if (document.querySelector('.kuraberu-ebay-btn')) {
       return;
     }
@@ -304,6 +309,7 @@
         console.log('[しらべる君 eBay商品] タイトルが見つかりません。2秒後にリトライ...');
         setTimeout(() => addResearchButton(true), 2000);
       } else {
+        buttonGaveUp = true;
         console.log('[しらべる君 eBay商品] リトライでもタイトル取得失敗。処理終了');
       }
       return;

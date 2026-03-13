@@ -15,6 +15,9 @@
   // 価格計算インスタンス
   let priceCalculator = null;
 
+  // ボタン追加を諦めたフラグ（MutationObserverの無限呼び出し防止）
+  let buttonGaveUp = false;
+
   // セラータイプ定義
   const SELLER_TYPES = {
     supplier: { label: '仕入れ先', color: '#4caf50', icon: '🛒' },
@@ -452,6 +455,11 @@
    * eBay調査ボタンを追加
    */
   function addResearchButton(isRetry = false) {
+    // リトライ済みで諦めた場合は何もしない
+    if (buttonGaveUp) {
+      return;
+    }
+
     console.log('[しらべる君] ボタン追加処理開始');
 
     // 既にボタンがあれば何もしない
@@ -466,6 +474,7 @@
         console.log('[しらべる君] タイトルが見つかりません。2秒後にリトライ...');
         setTimeout(() => addResearchButton(true), 2000);
       } else {
+        buttonGaveUp = true;
         console.log('[しらべる君] リトライでもタイトル取得失敗。処理終了');
       }
       return;
@@ -1213,6 +1222,7 @@
   setInterval(() => {
     if (window.location.href !== lastUrl) {
       lastUrl = window.location.href;
+      buttonGaveUp = false;  // URL変更時にリセット
       console.log('[しらべる君] URL変更検知:', lastUrl);
       if (isProductPage() && !document.querySelector('.kuraberu-btn')) {
         setTimeout(addResearchButton, 4000);
